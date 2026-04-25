@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's Your Birthday Animal?</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 30px;
+      padding: 40px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1em;
+      margin-bottom: 20px;
+    }
+
+    .category-label {
+      font-size: 0.8em;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .category-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+
+    .cat-btn {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 8px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 50px;
+      background: #f5f5f5;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: none;
+      margin-bottom: 0;
+    }
+
+    .cat-btn:hover {
+      border-color: #7c3aed;
+      color: #7c3aed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .cat-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 3px 10px rgba(124,58,237,0.35);
+    }
+
+    .inputs {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.85em;
+      color: #666;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    select {
+      font-family: inherit;
+      font-size: 1.1em;
+      padding: 10px 16px;
+      border: 3px solid #e0e0e0;
+      border-radius: 15px;
+      background: #f9f9f9;
+      color: #333;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      min-width: 130px;
+      text-align: center;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #7c3aed;
+    }
+
+    .find-btn {
+      font-family: inherit;
+      font-size: 1.2em;
+      padding: 14px 35px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+      margin-bottom: 30px;
+    }
+
+    .find-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+    }
+
+    .find-btn:active {
+      transform: scale(0.97);
+    }
+
+    .result {
+      display: none;
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .result.show { display: block; }
+
+    .animal-emoji {
+      font-size: 5em;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .name-tag {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: white;
+      border-radius: 20px;
+      padding: 20px 30px;
+      margin-bottom: 15px;
+    }
+
+    .name-tag .label {
+      font-size: 0.8em;
+      opacity: 0.85;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .name-tag .animal-name {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .fun-fact {
+      background: #f3f0ff;
+      border-radius: 15px;
+      padding: 15px 20px;
+      color: #555;
+      font-size: 0.95em;
+      line-height: 1.5;
+    }
+
+    .again-btn {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 10px 25px;
+      background: transparent;
+      color: #7c3aed;
+      border: 2px solid #7c3aed;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 15px;
+      box-shadow: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .again-btn:hover {
+      background: #7c3aed;
+      color: white;
+      transform: none;
+    }
+
+    .settings-toggle {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 9px 20px;
+      background: #f5f5f5;
+      color: #888;
+      border: 2px solid #e0e0e0;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: none;
+      margin-bottom: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .settings-toggle:hover {
+      background: #ede9fe;
+      color: #7c3aed;
+      border-color: #c4b5fd;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .settings-panel {
+      display: none;
+      margin-top: 15px;
+      padding: 18px;
+      background: #f9f7ff;
+      border-radius: 18px;
+      border: 2px solid #ede9fe;
+    }
+
+    .settings-panel.open { display: block; }
+
+    .settings-panel .category-label {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <a href="../index.html" style="position:fixed;top:20px;left:20px;font-family:inherit;font-size:1em;padding:10px 20px;background:white;border-radius:50px;text-decoration:none;color:#7c3aed;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.2);">← Back</a>
+
+  <div class="card">
+    <h1>🎂 Birthday Animal!</h1>
+    <p class="subtitle">Find out your birthday creature</p>
+    <div id="current-category" style="display:inline-block;background:#f3f0ff;border:2px solid #ede9fe;border-radius:50px;padding:5px 16px;font-size:0.85em;color:#7c3aed;margin-bottom:18px;">🌍 General</div>
+
+    <div class="inputs">
+      <div class="input-group">
+        <label>Day</label>
+        <select id="day">
+          <option value="">Pick day</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Month</label>
+        <select id="month">
+          <option value="">Pick month</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="find-btn" onclick="reveal()">✨ Find My Animal!</button>
+
+    <div class="result" id="result">
+      <span class="animal-emoji" id="emoji"></span>
+      <div class="name-tag">
+        <div class="label">You are a...</div>
+        <div class="animal-name" id="animal-name"></div>
+      </div>
+      <div class="fun-fact" id="fun-fact"></div>
+      <br>
+      <button class="again-btn" onclick="reset()">🔄 Try another birthday</button>
+    </div>
+
+    <button class="settings-toggle" onclick="toggleSettings()">⚙️ Settings</button>
+    <div class="settings-panel" id="settings-panel">
+      <div class="category-label">Choose a category</div>
+      <div class="category-buttons">
+        <button class="cat-btn active" onclick="setCategory('general', this)">🌍 General</button>
+        <button class="cat-btn" onclick="setCategory('sea', this)">🌊 Sea</button>
+        <button class="cat-btn" onclick="setCategory('big', this)">🦣 Big Animals</button>
+        <button class="cat-btn" onclick="setCategory('small', this)">🐭 Small Animals</button>
+        <button class="cat-btn" onclick="setCategory('powerful', this)">💥 Powerful</button>
+        <button class="cat-btn" onclick="setCategory('insects', this)">🐜 Small Insects</button>
+        <button class="cat-btn" onclick="setCategory('mythical', this)">✨ All Mythical</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const adjectives = {
+      1:  "Mighty",
+      2:  "Fluffy",
+      3:  "Sneaky",
+      4:  "Sparkly",
+      5:  "Grumpy",
+      6:  "Bouncy",
+      7:  "Sleepy",
+      8:  "Zany",
+      9:  "Wobbly",
+      10: "Spooky",
+      11: "Silly",
+      12: "Frosty",
+    };
+
+    const categories = {
+      general: {
+        1:  { name: "Lion",         emoji: "🦁", fact: "Lions can sleep up to 20 hours a day. Living the dream!" },
+        2:  { name: "Penguin",      emoji: "🐧", fact: "Penguins propose to their mates with a pebble. How romantic!" },
+        3:  { name: "Dragon",       emoji: "🐉", fact: "Dragons can breathe fire AND fly. Basically unbeatable." },
+        4:  { name: "Unicorn",      emoji: "🦄", fact: "Unicorns are the national animal of Scotland. No joke!" },
+        5:  { name: "Shark",        emoji: "🦈", fact: "Sharks are older than trees. They've been around 450 million years!" },
+        6:  { name: "Elephant",     emoji: "🐘", fact: "Elephants are the only animals that can't jump. They don't need to!" },
+        7:  { name: "Monkey",       emoji: "🐒", fact: "Monkeys can recognise themselves in mirrors — just like you!" },
+        8:  { name: "Owl",          emoji: "🦉", fact: "Owls can turn their heads almost all the way around — 270 degrees!" },
+        9:  { name: "Tiger",        emoji: "🐯", fact: "Tiger stripes are like fingerprints — no two are the same!" },
+        10: { name: "Dolphin",      emoji: "🐬", fact: "Dolphins have names for each other and call out to their friends!" },
+        11: { name: "Fox",          emoji: "🦊", fact: "Foxes use the Earth's magnetic field to hunt. Built-in GPS!" },
+        12: { name: "Bear",         emoji: "🐻", fact: "Bears can smell food from 20 miles away. Better hide your snacks!" },
+        13: { name: "Panda",        emoji: "🐼", fact: "Pandas eat bamboo for up to 12 hours a day. Very dedicated." },
+        14: { name: "Wolf",         emoji: "🐺", fact: "Wolves howl to keep the pack together — like a group chat!" },
+        15: { name: "Giraffe",      emoji: "🦒", fact: "Giraffes only sleep about 30 minutes a day. Total night owl." },
+        16: { name: "Koala",        emoji: "🐨", fact: "Koalas sleep 22 hours a day. Even more than lions!" },
+        17: { name: "Parrot",       emoji: "🦜", fact: "Some parrots can learn over 1000 words. Show-offs!" },
+        18: { name: "Hamster",      emoji: "🐹", fact: "Hamsters can run up to 8 miles a night on their wheel. Non-stop!" },
+        19: { name: "Cheetah",      emoji: "🐆", fact: "Cheetahs can go from 0 to 60mph in 3 seconds. Faster than a sports car!" },
+        20: { name: "Octopus",      emoji: "🐙", fact: "Octopuses have 3 hearts and blue blood. Totally alien!" },
+        21: { name: "Flamingo",     emoji: "🦩", fact: "Flamingos are born grey — they turn pink from the food they eat!" },
+        22: { name: "Hedgehog",     emoji: "🦔", fact: "Hedgehogs are immune to many snake venoms. Tiny superheroes!" },
+        23: { name: "Narwhal",      emoji: "🦄", fact: "Narwhals are real! Their 'horn' is actually a giant tooth." },
+        24: { name: "Sloth",        emoji: "🦥", fact: "Sloths are so slow algae grows on their fur. Chill level: extreme." },
+        25: { name: "Platypus",     emoji: "🦫", fact: "Platypuses are one of the only mammals that lay eggs. Weird and wonderful!" },
+        26: { name: "Axolotl",      emoji: "🦎", fact: "Axolotls can regrow their limbs, heart, and even part of their brain!" },
+        27: { name: "Capybara",     emoji: "🐾", fact: "Capybaras are best friends with almost every animal. Total legends." },
+        28: { name: "Quokka",       emoji: "😊", fact: "Quokkas are called the happiest animals on Earth. They always look like they're smiling!" },
+        29: { name: "Tardigrade",   emoji: "🔬", fact: "Tardigrades can survive in outer space. Toughest creature alive!" },
+        30: { name: "Blobfish",     emoji: "🫠", fact: "Blobfish look normal underwater — the blob face is just from being brought up to the surface!" },
+        31: { name: "T-Rex",        emoji: "🦕", fact: "T-Rex had tiny arms but a bite force of 13,000 pounds. Still terrifying!" },
+      },
+
+      sea: {
+        1:  { name: "Shark",            emoji: "🦈", fact: "Sharks are older than trees — they've been around for 450 million years!" },
+        2:  { name: "Mermaid",          emoji: "🧜", fact: "Mermaids appear in legends from ancient Assyria, Greece, and Scotland. Everyone loves them!" },
+        3:  { name: "Octopus",          emoji: "🐙", fact: "Octopuses have 3 hearts, 8 arms, and blue blood. Totally alien!" },
+        4:  { name: "Dolphin",          emoji: "🐬", fact: "Dolphins have names for each other and call out to their friends!" },
+        5:  { name: "Kraken",           emoji: "🦑", fact: "The Kraken is a legendary giant squid said to drag whole ships underwater. Run!" },
+        6:  { name: "Seahorse",         emoji: "🐟", fact: "Seahorses are the only animal where the DAD carries and gives birth to the babies!" },
+        7:  { name: "Jellyfish",        emoji: "🪼", fact: "Jellyfish have no brain, no heart, and no bones — and they've existed for 500 million years!" },
+        8:  { name: "Sea Turtle",       emoji: "🐢", fact: "Sea turtles can hold their breath for up to 7 hours while sleeping underwater!" },
+        9:  { name: "Narwhal",          emoji: "🦄", fact: "Narwhals are real! Their spiral 'horn' is actually a giant tooth that can grow 3 metres long!" },
+        10: { name: "Blue Whale",       emoji: "🐳", fact: "Blue whales are the loudest animals on Earth — louder than a jet engine!" },
+        11: { name: "Pufferfish",       emoji: "🐡", fact: "Pufferfish can inflate to 3 times their size in seconds. Instant balloon!" },
+        12: { name: "Manta Ray",        emoji: "🫧", fact: "Manta rays have the biggest brain of any fish and can recognise themselves in mirrors!" },
+        13: { name: "Sea Serpent",      emoji: "🐍", fact: "Ancient sailors reported giant sea serpents that could wrap around ships. Terrifying!" },
+        14: { name: "Crab",             emoji: "🦀", fact: "Crabs walk sideways because their legs bend outward. They're built differently!" },
+        15: { name: "Anglerfish",       emoji: "🐠", fact: "Anglerfish have a glowing lure dangling from their head to attract prey in the deep dark ocean!" },
+        16: { name: "Giant Squid",      emoji: "🦑", fact: "Giant squids have eyes the size of footballs — the biggest of any animal on Earth!" },
+        17: { name: "Seal",             emoji: "🦭", fact: "Seals can sleep underwater! They float up for a breath and sink back down without waking up." },
+        18: { name: "Siren",            emoji: "🧜‍♀️", fact: "In Greek mythology, Sirens lured sailors onto rocks with their beautiful singing. Watch out!" },
+        19: { name: "Hammerhead Shark", emoji: "🦈", fact: "Hammerhead sharks have eyes on opposite ends of their T-shaped head — 360 degree vision!" },
+        20: { name: "Sea Otter",        emoji: "🦦", fact: "Sea otters hold hands while sleeping so they don't drift apart from each other. So cute!" },
+        21: { name: "Leviathan",        emoji: "🐉", fact: "The Leviathan is a biblical sea monster so massive it could swallow the ocean whole!" },
+        22: { name: "Clownfish",        emoji: "🐠", fact: "All clownfish are born male. The biggest one in a group can change into a female!" },
+        23: { name: "Mantis Shrimp",    emoji: "🦐", fact: "Mantis shrimp can see 16 types of colour. Humans can only see 3. We're basically colourblind to them!" },
+        24: { name: "Blobfish",         emoji: "🫠", fact: "Blobfish actually look totally normal underwater — the blobby face only happens when brought to the surface!" },
+        25: { name: "Orca",             emoji: "🐋", fact: "Orcas are actually dolphins, not whales! And they're the apex predator of the entire ocean." },
+        26: { name: "Lobster",          emoji: "🦞", fact: "Lobsters don't age the same way we do — they just keep growing. Technically they could live forever!" },
+        27: { name: "Sea Dragon",       emoji: "🐉", fact: "The mythical sea dragon breathes steam instead of fire — because water puts fire out, obviously!" },
+        28: { name: "Beluga Whale",     emoji: "🐳", fact: "Beluga whales are called 'canaries of the sea' because of their amazing singing and chirping sounds!" },
+        29: { name: "Starfish",         emoji: "⭐", fact: "Starfish can regrow lost arms — and some species can regrow an ENTIRE body from just one arm!" },
+        30: { name: "Hippocampus",      emoji: "🐴", fact: "In Greek myth, the Hippocampus was a horse with a fish tail that pulled Poseidon's chariot through the sea!" },
+        31: { name: "Coelacanth",       emoji: "🐟", fact: "The coelacanth was thought extinct for 65 million years — until a fisherman caught one alive in 1938!" },
+      },
+
+      big: {
+        1:  { name: "Elephant",         emoji: "🐘", fact: "Elephants are the largest land animals on Earth and never forget a face — or a grudge!" },
+        2:  { name: "Dragon",           emoji: "🐉", fact: "Dragons are said to live for thousands of years, growing bigger and more powerful with age!" },
+        3:  { name: "Blue Whale",       emoji: "🐳", fact: "Blue whales are the biggest animals ever to exist on Earth — bigger than any dinosaur!" },
+        4:  { name: "Griffin",          emoji: "🦅", fact: "The Griffin has the body of a lion and the head of an eagle — king of beasts AND birds!" },
+        5:  { name: "Giraffe",          emoji: "🦒", fact: "Giraffes are the tallest animals alive, reaching 6 metres. Their neck alone is 2 metres long!" },
+        6:  { name: "Kraken",           emoji: "🦑", fact: "The Kraken was said to be so large it could be mistaken for an island. Sailors would camp on it!" },
+        7:  { name: "Hippopotamus",     emoji: "🦛", fact: "Hippos can run faster than humans on land — up to 30mph. Don't let the size fool you!" },
+        8:  { name: "Phoenix",          emoji: "🔥", fact: "The Phoenix bursts into flames when it dies and is reborn from the ashes. Impossible to kill!" },
+        9:  { name: "Polar Bear",       emoji: "🐻‍❄️", fact: "Polar bears have black skin under their white fur to soak up heat. Natural solar panels!" },
+        10: { name: "Leviathan",        emoji: "🐉", fact: "The Leviathan is a sea monster so enormous that when it swims, the oceans churn into storms!" },
+        11: { name: "Gorilla",          emoji: "🦍", fact: "Gorillas are 10 times stronger than humans. A silverback could flip a car without trying!" },
+        12: { name: "Roc",              emoji: "🦅", fact: "The Roc is a mythical bird so massive it could carry an elephant in its talons. Absolutely enormous!" },
+        13: { name: "Rhinoceros",       emoji: "🦏", fact: "A rhino's horn is made of the same stuff as your fingernails — just a LOT more of it!" },
+        14: { name: "Fenrir",           emoji: "🐺", fact: "Fenrir is a monstrous wolf from Norse mythology so big the gods feared it would swallow the sun!" },
+        15: { name: "Sperm Whale",      emoji: "🐳", fact: "Sperm whales have the biggest brain of any animal ever — and dive 3km deep to hunt giant squid!" },
+        16: { name: "Thunderbird",      emoji: "⚡", fact: "Native American mythology says the Thunderbird was so large its wingbeats created thunder and lightning!" },
+        17: { name: "Tiger",            emoji: "🐯", fact: "Tigers are the biggest wild cats on Earth. A single paw swipe can kill a fully grown bear!" },
+        18: { name: "Hydra",            emoji: "🐍", fact: "Cut off one of the Hydra's heads and two grow back. Hercules had to burn each neck to stop it!" },
+        19: { name: "Saltwater Croc",   emoji: "🐊", fact: "Saltwater crocodiles are the largest reptiles alive — up to 7 metres long and 1,000kg!" },
+        20: { name: "Behemoth",         emoji: "🦬", fact: "The Behemoth is a biblical beast so powerful that only its creator could approach it. Untouchable!" },
+        21: { name: "Giant Tortoise",   emoji: "🐢", fact: "Giant tortoises can live for over 200 years. Some alive today were born before the Victorian era!" },
+        22: { name: "Basilisk",         emoji: "🐍", fact: "The Basilisk — king of serpents — was said to be so large and deadly its very gaze could kill you!" },
+        23: { name: "Moose",            emoji: "🫎", fact: "Moose are the largest deer species. A fully grown male stands taller than most cars!" },
+        24: { name: "Jörmungandr",      emoji: "🐍", fact: "Jörmungandr is the World Serpent of Norse myth — so long it wraps around the entire Earth and bites its own tail!" },
+        25: { name: "Bison",            emoji: "🦬", fact: "Bison can weigh over a tonne and sprint at 35mph. They ruled North America for thousands of years!" },
+        26: { name: "Cerberus",         emoji: "🐕", fact: "Cerberus is the three-headed dog that guards the entrance to the Underworld. No sneaking past this one!" },
+        27: { name: "Orca",             emoji: "🐋", fact: "Orcas hunt in packs and have been known to beach themselves to catch seals. The ultimate team hunters!" },
+        28: { name: "Sleipnir",         emoji: "🐴", fact: "Sleipnir is Odin's eight-legged horse from Norse myth — the fastest creature in all the nine worlds!" },
+        29: { name: "Great White Shark", emoji: "🦈", fact: "Great white sharks can detect a single drop of blood from 5km away. Incredible hunters!" },
+        30: { name: "Simurgh",          emoji: "🦅", fact: "The Simurgh is a Persian mythical bird so ancient it has witnessed the world's destruction three times!" },
+        31: { name: "Colossal Squid",   emoji: "🦑", fact: "The colossal squid is even bigger than the giant squid and has rotating hooks on its tentacles. Nightmare fuel!" },
+      },
+
+      small: {
+        1:  { name: "Mouse",           emoji: "🐭", fact: "Mice can squeeze through any gap bigger than a pencil — their skeleton is incredibly flexible!" },
+        2:  { name: "Fairy",           emoji: "🧚", fact: "In Celtic legend, fairies are tiny magical beings who live inside flowers and grant wishes to the kind-hearted!" },
+        3:  { name: "Hamster",         emoji: "🐹", fact: "Hamsters can stuff food equal to half their body weight into their cheek pouches. Living lunchboxes!" },
+        4:  { name: "Imp",             emoji: "😈", fact: "Imps are mischievous little creatures from folklore who love playing pranks and causing harmless chaos!" },
+        5:  { name: "Hummingbird",     emoji: "🐦", fact: "Hummingbirds are the only birds that can fly backwards — their wings beat up to 80 times per second!" },
+        6:  { name: "Pixie",           emoji: "🧚", fact: "Pixies from Cornish legend love to lead travellers astray at night and steal horses for midnight rides!" },
+        7:  { name: "Hedgehog",        emoji: "🦔", fact: "Hedgehogs have up to 5,000 spines and can roll into a perfect ball. Nature's best defence move!" },
+        8:  { name: "Sprite",          emoji: "✨", fact: "Elemental sprites are so tiny they live inside dewdrops and flower petals, invisible to most humans!" },
+        9:  { name: "Chipmunk",        emoji: "🐿️", fact: "Chipmunks can stuff up to 165 acorns in their cheeks at once. Absolute champions of snacking!" },
+        10: { name: "Leprechaun",      emoji: "🍀", fact: "Irish fairy cobblers who hide a pot of gold at the end of every rainbow — but they're very tricky to catch!" },
+        11: { name: "Bumblebee",       emoji: "🐝", fact: "Old physics said bumblebees shouldn't be able to fly — but nobody told the bumblebees!" },
+        12: { name: "Brownie",         emoji: "🏠", fact: "Scottish brownies are tiny mythical helpers who secretly tidy your house while you sleep. Where's mine?!" },
+        13: { name: "Pygmy Marmoset",  emoji: "🐒", fact: "The pygmy marmoset is the world's smallest monkey and can fit comfortably in the palm of your hand!" },
+        14: { name: "Will-o'-the-Wisp",emoji: "🕯️", fact: "Ghostly lights seen floating over marshes at night — folklore says they lead travellers into bogs!" },
+        15: { name: "Dormouse",        emoji: "🐭", fact: "Dormice sleep for 6 months of the year and inspired the sleepy Dormouse in Alice in Wonderland!" },
+        16: { name: "Gnome",           emoji: "🍄", fact: "Earth spirits said to move through solid ground like fish through water, guarding buried treasure!" },
+        17: { name: "Bumblebee Bat",   emoji: "🦇", fact: "The bumblebee bat is the world's smallest mammal — it weighs less than a 2p coin!" },
+        18: { name: "Tomte",           emoji: "🧝", fact: "Scandinavian house spirits the size of a small child who protect farms — but only if you leave them porridge!" },
+        19: { name: "Ferret",          emoji: "🐾", fact: "Ferrets can squeeze through any gap bigger than their skull, because their skeleton bends like rubber!" },
+        20: { name: "Korrigan",        emoji: "🧚‍♀️", fact: "Beautiful Celtic fairies who dance by moonlight — but beware, they can curse anyone who insults them!" },
+        21: { name: "Pika",            emoji: "🐾", fact: "Pikas are tiny mountain relatives of rabbits who collect flowers and dry them like hay for winter snacks!" },
+        22: { name: "Nisse",           emoji: "🧝", fact: "Norwegian barn elves who bring good luck to families — but only if you leave them a bowl of porridge on Christmas!" },
+        23: { name: "Gerbil",          emoji: "🐹", fact: "Gerbils can jump 45cm straight up — scaled to human height, that's like jumping over a double-decker bus!" },
+        24: { name: "Thumbling",       emoji: "👍", fact: "From fairy tales: a boy born the size of a thumb who outwits giants and rides sparrows on grand adventures!" },
+        25: { name: "Sugar Glider",    emoji: "🦔", fact: "Sugar gliders glide between trees using flaps of skin stretched between their arms and legs — tiny superheroes!" },
+        26: { name: "Homunculus",      emoji: "🧪", fact: "Medieval alchemists claimed they could grow a tiny artificial human in a bottle. Probably not true. Probably." },
+        27: { name: "Bee Hummingbird", emoji: "🐦", fact: "The bee hummingbird is the world's smallest bird — tinier than a bumblebee and lighter than a paperclip!" },
+        28: { name: "Fairy Wren",      emoji: "🐦", fact: "Male fairy wrens turn brilliant blue and sing a special secret song to their mate every single morning!" },
+        29: { name: "Shrew",           emoji: "🐭", fact: "Shrews must eat every 2 hours or they will die — they have the fastest metabolism of any mammal!" },
+        30: { name: "Puck",            emoji: "🃏", fact: "Puck (Robin Goodfellow) is Shakespeare's mischievous fairy who pranks humans and causes magical chaos!" },
+        31: { name: "Pygmy Owl",       emoji: "🦉", fact: "The pygmy owl is only 15cm tall — but it regularly hunts prey bigger than itself. Tiny but absolutely fearless!" },
+      },
+
+      powerful: {
+        1:  { name: "Gorilla",            emoji: "🦍", fact: "Gorillas are 10 times stronger than a human and can bend iron bars with their bare hands!" },
+        2:  { name: "Typhon",             emoji: "🌪️", fact: "Typhon was the last and greatest monster of Greek myth — so terrifying that even the gods fled from him!" },
+        3:  { name: "Saltwater Crocodile",emoji: "🐊", fact: "Saltwater crocs have the strongest bite ever measured — powerful enough to crush a car door!" },
+        4:  { name: "Fenrir",             emoji: "🐺", fact: "The Norse wolf god was so powerful the gods had to trick it into chains — nothing could hold it by force!" },
+        5:  { name: "Grizzly Bear",       emoji: "🐻", fact: "A grizzly can flip a 300kg boulder with one paw and run faster than a racehorse!" },
+        6:  { name: "Thunderbird",        emoji: "⚡", fact: "The Thunderbird creates hurricanes just by flapping its wings and shoots lightning from its eyes!" },
+        7:  { name: "Hippopotamus",       emoji: "🦛", fact: "Hippos kill more humans than any other large animal in Africa — and can outrun a person on land!" },
+        8:  { name: "Hydra",              emoji: "🐍", fact: "Cut one head off and two grow back. Only fire could stop it — and even that barely worked!" },
+        9:  { name: "Tiger",              emoji: "🐯", fact: "Tigers are strong enough to drag prey heavier than themselves several miles uphill without stopping!" },
+        10: { name: "Jörmungandr",        emoji: "🐍", fact: "The World Serpent is so powerful that when it finally lets go of its tail, the world itself will end!" },
+        11: { name: "Orca",               emoji: "🐋", fact: "Orcas have zero natural predators and actively hunt great white sharks for fun. Kings of the ocean!" },
+        12: { name: "Scylla",             emoji: "🐙", fact: "The six-headed Scylla snatched sailors from passing ships — no one who sailed close ever escaped!" },
+        13: { name: "Great White Shark",  emoji: "🦈", fact: "Great whites can detect one drop of blood from 5km away and breach fully out of the water at 40mph!" },
+        14: { name: "Manticore",          emoji: "🦁", fact: "The Manticore has a lion's body, a human face, and fires poisonous spines like arrows from its tail!" },
+        15: { name: "Cape Buffalo",       emoji: "🦬", fact: "Cape buffalo are called 'Black Death' — they memorise the faces of hunters who've shot them and seek revenge!" },
+        16: { name: "Charybdis",          emoji: "🌀", fact: "Charybdis was a whirlpool monster that could swallow an entire ship whole — three times a day!" },
+        17: { name: "Electric Eel",       emoji: "⚡", fact: "Electric eels discharge up to 860 volts — enough to stun a horse or stop a human heart!" },
+        18: { name: "Behemoth",           emoji: "🦬", fact: "The Behemoth is so powerful the Bible says only its creator can approach it. Everything else flees!" },
+        19: { name: "Komodo Dragon",      emoji: "🦎", fact: "Komodo dragons have venom, serrated teeth, and can take down a water buffalo entirely alone!" },
+        20: { name: "Atlas",              emoji: "🌍", fact: "The Titan Atlas was condemned to hold up the entire sky and heavens on his shoulders for all eternity!" },
+        21: { name: "Mantis Shrimp",      emoji: "🦐", fact: "The mantis shrimp punches faster than a bullet and hits hard enough to shatter aquarium glass!" },
+        22: { name: "Leviathan",          emoji: "🐉", fact: "The Leviathan is so colossal that when it swims, it causes storms across the entire surface of the ocean!" },
+        23: { name: "Honey Badger",       emoji: "🦡", fact: "Honey badgers are immune to cobra venom, have survived lion maulings, and literally never give up!" },
+        24: { name: "Colossus",           emoji: "🗿", fact: "A giant bronze robot from Greek myth that guarded an entire island by hurling boulders at enemy ships!" },
+        25: { name: "Anaconda",           emoji: "🐍", fact: "Anacondas squeeze with enough force to crush bones — and can swallow prey whole, including deer!" },
+        26: { name: "Cerberus",           emoji: "🐕", fact: "The three-headed hellhound guards the Underworld — almost nothing has ever gotten past it!" },
+        27: { name: "Blue-ringed Octopus",emoji: "🐙", fact: "Barely the size of a golf ball, but carries enough venom to kill 26 adult humans with no antidote!" },
+        28: { name: "Typhon",             emoji: "🌋", fact: "When Typhon raged across the earth he left volcanoes and earthquakes in his wake — mountains were his footprints!" },
+        29: { name: "Wolverine",          emoji: "🐾", fact: "Wolverines have driven grizzly bears off their kills and once fought off an entire pack of wolves alone!" },
+        30: { name: "Pistol Shrimp",      emoji: "🦐", fact: "The pistol shrimp snaps its claw so fast it creates a shockwave hotter than the surface of the sun!" },
+        31: { name: "Dragon",             emoji: "🐉", fact: "Master of fire, flight, and ancient wisdom — the most feared and magnificent creature in myths across the entire world!" },
+      },
+
+      insects: {
+        1:  { name: "Ant",               emoji: "🐜", fact: "Ants can carry 50 times their own body weight. If you were that strong you could lift a car!" },
+        2:  { name: "Honey Bee",         emoji: "🐝", fact: "Honey bees have been kept by humans for over 9,000 years — and the honey they make never ever expires!" },
+        3:  { name: "Monarch Butterfly", emoji: "🦋", fact: "Monarch butterflies migrate 4,500km from Canada to Mexico every year, navigating by the sun!" },
+        4:  { name: "Firefly",           emoji: "✨", fact: "Fireflies produce cold light with zero heat wasted — scientists are still trying to copy the technology!" },
+        5:  { name: "Dragonfly",         emoji: "🪲", fact: "Dragonflies have a 95% hunting success rate — the highest of any predator on Earth. Even lions only get 25%!" },
+        6:  { name: "Rhinoceros Beetle", emoji: "🪲", fact: "Rhinoceros beetles can carry 850 times their own weight. Scaled up, that's lifting a jumbo jet!" },
+        7:  { name: "Ladybird",          emoji: "🐞", fact: "When threatened, ladybirds squirt foul-smelling blood from their knees to drive predators away!" },
+        8:  { name: "Stick Insect",      emoji: "🌿", fact: "The world's longest insect is a stick insect reaching 64cm — longer than most people's arms!" },
+        9:  { name: "Praying Mantis",    emoji: "🪲", fact: "Praying mantises can turn their heads 180 degrees and snatch prey faster than the human eye can see!" },
+        10: { name: "Bombardier Beetle", emoji: "🪲", fact: "Bombardier beetles fire a boiling chemical explosion from their bottom at 100°C — several times per second!" },
+        11: { name: "Bullet Ant",        emoji: "🐜", fact: "The bullet ant has the most painful sting of any insect — described as being shot. Hence the name!" },
+        12: { name: "Cicada",            emoji: "🦗", fact: "Some cicadas spend 17 years underground, then emerge all at once in their billions. Imagine the noise!" },
+        13: { name: "Goliath Beetle",    emoji: "🪲", fact: "The Goliath beetle is the heaviest insect alive — as heavy as an apple and as big as your fist!" },
+        14: { name: "Scarab Beetle",     emoji: "🪲", fact: "Ancient Egyptians worshipped the scarab beetle, believing it rolled the sun across the sky like a ball of dung!" },
+        15: { name: "Leafcutter Ant",    emoji: "🐜", fact: "Leafcutter ants grow underground fungus farms — they've been doing agriculture for 50 million years!" },
+        16: { name: "Glow Worm",         emoji: "🪱", fact: "Glow worms aren't worms at all — they're beetle larvae that glow in the dark to attract mates!" },
+        17: { name: "Mayfly",            emoji: "🪰", fact: "Adult mayflies live for just one day. They have no mouth and no stomach — just enough time to find a mate!" },
+        18: { name: "Water Strider",     emoji: "🪲", fact: "Water striders walk on water using microscopic hairs that trap air bubbles under their feet!" },
+        19: { name: "Hercules Beetle",   emoji: "🪲", fact: "The Hercules beetle is the world's longest beetle — its horn alone can be longer than its entire body!" },
+        20: { name: "Mosquito",          emoji: "🦟", fact: "Mosquitoes are the deadliest animal on Earth — responsible for more human deaths than any other creature!" },
+        21: { name: "Cockroach",         emoji: "🪳", fact: "Cockroaches have been on Earth for 350 million years and can survive a week after losing their head!" },
+        22: { name: "Assassin Bug",      emoji: "🪲", fact: "Assassin bugs wear the corpses of their victims on their back as armour. One of nature's most horrifying habits!" },
+        23: { name: "Dung Beetle",       emoji: "🪲", fact: "Dung beetles navigate using the Milky Way — the only insect known to use stars to find its way!" },
+        24: { name: "Damselfly",         emoji: "🪲", fact: "Damselfly larvae breathe through gills in their tail and can shoot the gills out like a jet to escape danger!" },
+        25: { name: "Grasshopper",       emoji: "🦗", fact: "Grasshoppers can jump 20 times their body length — like a human leaping the length of a football pitch!" },
+        26: { name: "Giant Hornet",      emoji: "🐝", fact: "Japanese giant hornets can wipe out an entire hive of 30,000 bees in just a few hours. Terrifying!" },
+        27: { name: "Cricket",           emoji: "🦗", fact: "Crickets chirp faster in warmer weather — you can actually estimate the temperature by counting their chirps!" },
+        28: { name: "Flea",              emoji: "🦟", fact: "Fleas can jump 150 times their own height — the equivalent of a human jumping over a skyscraper!" },
+        29: { name: "Wasp",              emoji: "🐝", fact: "Wasps are incredible hunters — they catch caterpillars and spiders mid-air to feed their young!" },
+        30: { name: "Moth",              emoji: "🦋", fact: "Moths can hear bat sonar with ears on their wings and take evasive action in milliseconds!" },
+        31: { name: "Atlas Moth",        emoji: "🦋", fact: "The atlas moth has a 30cm wingspan and no mouth — it lives entirely off fat reserves and dies within days!" },
+      },
+
+      mythical: {
+        1:  { name: "Dragon",       emoji: "🐉", fact: "Dragons appear in myths from Europe, China, and the Middle East — every culture feared and loved them!" },
+        2:  { name: "Unicorn",      emoji: "🦄", fact: "Unicorns are the national animal of Scotland. Their horn was said to cure any poison!" },
+        3:  { name: "Phoenix",      emoji: "🔥", fact: "When a Phoenix dies it bursts into flames and a new one hatches from the ashes. Immortal!" },
+        4:  { name: "Griffin",      emoji: "🦅", fact: "The Griffin — part lion, part eagle — was said to guard treasures and only ever mate for life!" },
+        5:  { name: "Kraken",       emoji: "🦑", fact: "The Kraken was so big that sailors thought it was an island. Some tried to make camp on it!" },
+        6:  { name: "Mermaid",      emoji: "🧜", fact: "Mermaid legends exist in almost every coastal culture around the world, for thousands of years!" },
+        7:  { name: "Cerberus",     emoji: "🐕", fact: "Cerberus has three heads, a serpent for a tail, and guards the gates of the Underworld in Greek myth!" },
+        8:  { name: "Hydra",        emoji: "🐍", fact: "Cut one of the Hydra's heads off and two grow back. Hercules had to burn each stump to defeat it!" },
+        9:  { name: "Basilisk",     emoji: "🐍", fact: "The Basilisk — king of all serpents — was said to kill with just its gaze or its breath!" },
+        10: { name: "Leviathan",    emoji: "🐉", fact: "The Leviathan is a monstrous sea beast from biblical legend — so powerful nothing on Earth can stop it!" },
+        11: { name: "Thunderbird",  emoji: "⚡", fact: "The Thunderbird of Native American legend creates storms with its wings and shoots lightning from its eyes!" },
+        12: { name: "Roc",          emoji: "🦅", fact: "The Roc is so enormous it carries elephants to its nest to feed its chicks. Absolutely colossal!" },
+        13: { name: "Fenrir",       emoji: "🐺", fact: "Fenrir is a giant wolf from Norse mythology — at the end of the world, it will swallow the sun!" },
+        14: { name: "Jörmungandr",  emoji: "🐍", fact: "The World Serpent is so long it wraps around the entire Earth and bites its own tail!" },
+        15: { name: "Sleipnir",     emoji: "🐴", fact: "Sleipnir has eight legs and is the fastest creature in all of the nine worlds of Norse mythology!" },
+        16: { name: "Simurgh",      emoji: "🦅", fact: "The Simurgh is an ancient Persian bird wise enough to know all the world's secrets — it's lived 3 ages!" },
+        17: { name: "Behemoth",     emoji: "🦬", fact: "The Behemoth is an unstoppable land beast from the Bible — so powerful only its creator can control it!" },
+        18: { name: "Siren",        emoji: "🧜‍♀️", fact: "Sirens sang so beautifully that sailors would steer their ships onto rocks just to get closer. Deadly!" },
+        19: { name: "Sea Serpent",  emoji: "🐍", fact: "Ancient sailors drew sea serpents on maps in the unexplored oceans with the warning: 'here be monsters'!" },
+        20: { name: "Hippocampus",  emoji: "🐴", fact: "Half horse, half fish — the Hippocampus pulled the god Poseidon's chariot through the seas!" },
+        21: { name: "Qilin",        emoji: "🦄", fact: "The Qilin is a Chinese mythical creature that appears only when a great leader is born or dies!" },
+        22: { name: "Manticore",    emoji: "🦁", fact: "The Manticore has the head of a man, the body of a lion, and a scorpion's tail. Very bad news!" },
+        23: { name: "Chimera",      emoji: "🐐", fact: "The Chimera breathes fire and has a lion's head, a goat's body, and a serpent for a tail!" },
+        24: { name: "Pegasus",      emoji: "🐴", fact: "Pegasus is the winged horse of Greek myth, born from the blood of Medusa when Perseus slew her!" },
+        25: { name: "Sphinx",       emoji: "🦁", fact: "The Sphinx asks travellers a riddle — if you get it wrong, she eats you. No pressure!" },
+        26: { name: "Wyvern",       emoji: "🐉", fact: "A Wyvern is like a dragon but with only two legs and a barbed tail — still absolutely terrifying!" },
+        27: { name: "Selkie",       emoji: "🦭", fact: "Selkies are seals that can shed their skin to become human. Celtic legend says they're irresistible!" },
+        28: { name: "Baku",         emoji: "🐘", fact: "The Baku is a Japanese spirit that eats nightmares — with an elephant's trunk and a tiger's paws!" },
+        29: { name: "Ammit",        emoji: "🐊", fact: "Ammit is an Egyptian beast — part lion, part hippo, part crocodile — that devours unworthy souls!" },
+        30: { name: "Sea Dragon",   emoji: "🐉", fact: "Mythical sea dragons ruled the deep oceans, breathing steam and controlling the tides!" },
+        31: { name: "Nessie",       emoji: "🦕", fact: "The Loch Ness Monster has been spotted in Scotland for over 1,500 years. Is it real? Nobody knows!" },
+      },
+    };
+
+    let currentCategory = 'general';
+
+    function setCategory(cat, btn) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('current-category').textContent = btn.textContent;
+      document.getElementById('result').classList.remove('show');
+    }
+
+    function toggleSettings() {
+      document.getElementById('settings-panel').classList.toggle('open');
+    }
+
+    // Populate days dropdown
+    const daySelect = document.getElementById('day');
+    for (let d = 1; d <= 31; d++) {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      daySelect.appendChild(opt);
+    }
+
+    function reveal() {
+      const month = parseInt(document.getElementById('month').value);
+      const day = parseInt(document.getElementById('day').value);
+
+      if (!month || !day) {
+        alert("Pick your birth day and month first! 🎂");
+        return;
+      }
+
+      const adj = adjectives[month];
+      const animal = categories[currentCategory][day];
+
+      document.getElementById('emoji').textContent = animal.emoji;
+      document.getElementById('animal-name').textContent = `${adj} ${animal.name}`;
+      document.getElementById('fun-fact').innerHTML = `<strong>Fun fact:</strong> ${animal.fact}`;
+
+      const result = document.getElementById('result');
+      result.classList.remove('show');
+      void result.offsetWidth;
+      result.classList.add('show');
+    }
+
+    function reset() {
+      document.getElementById('result').classList.remove('show');
+      document.getElementById('month').value = '';
+      document.getElementById('day').value = '';
+    }
+  </script>
+</body>
+</html>
