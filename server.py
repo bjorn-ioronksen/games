@@ -14,12 +14,20 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.j
 with open(CONFIG_PATH) as f:
     config = json.load(f)
 
-OPENAI_KEY = config.get('openai_key', '')
 COGNITO_DOMAIN = config.get('cognito_domain', '')
 COGNITO_CLIENT_ID = config.get('cognito_client_id', '')
-COGNITO_CLIENT_SECRET = config.get('cognito_client_secret', '')
 COGNITO_REDIRECT_URI = config.get('cognito_redirect_uri', '')
 COGNITO_REGION = config.get('cognito_region', 'eu-west-1')
+
+
+def fetch_secret(secret_id, region):
+    import boto3
+    client = boto3.client('secretsmanager', region_name=region)
+    return client.get_secret_value(SecretId=secret_id)['SecretString']
+
+
+OPENAI_KEY = fetch_secret('games/openai-key', COGNITO_REGION)
+COGNITO_CLIENT_SECRET = fetch_secret('games/cognito-client-secret', COGNITO_REGION)
 
 # session_token -> {expires_at, username}
 sessions = {}

@@ -22,20 +22,17 @@ output "cognito_client_id" {
   value = aws_cognito_user_pool_client.games.id
 }
 
-output "cognito_client_secret" {
-  value     = aws_cognito_user_pool_client.games.client_secret
-  sensitive = true
+output "openai_secret_update_command" {
+  description = "Run this to set your OpenAI key in Secrets Manager"
+  value       = "aws secretsmanager put-secret-value --secret-id games/openai-key --secret-string 'sk-...'"
 }
 
 output "config_json" {
-  description = "Paste this into config.json on the server (fill in your openai_key)"
-  sensitive   = true
+  description = "Paste this into config.json on the server (no secrets — those live in Secrets Manager)"
   value = jsonencode({
-    openai_key            = "<your-openai-key>"
-    cognito_domain        = "https://${aws_cognito_user_pool_domain.games.domain}.auth.${var.region}.amazoncognito.com"
-    cognito_client_id     = aws_cognito_user_pool_client.games.id
-    cognito_client_secret = aws_cognito_user_pool_client.games.client_secret
-    cognito_redirect_uri  = "http://${aws_eip.games_server.public_ip}/callback"
-    cognito_region        = var.region
+    cognito_domain       = "https://${aws_cognito_user_pool_domain.games.domain}.auth.${var.region}.amazoncognito.com"
+    cognito_client_id    = aws_cognito_user_pool_client.games.id
+    cognito_redirect_uri = "http://${aws_eip.games_server.public_ip}/callback"
+    cognito_region       = var.region
   })
 }
