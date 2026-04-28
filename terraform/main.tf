@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -25,6 +29,65 @@ data "aws_ami" "amazon_linux" {
     values = ["available"]
   }
 }
+
+# Random suffix to make Cognito domain globally unique
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+# ── Cognito ────────────────────────────────────────────────────────────────────
+
+resource "aws_cognito_user_pool" "games" {
+  name = "games-users"
+
+  password_policy {
+    minimum_length    = 8
+    require_uppercase = false
+    require_symbols   = false
+    require_numbers   = false
+  }
+
+  auto_verified_attributes = ["email"]
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+}
+
+resource "aws_cognito_user_pool_domain" "games" {
+  domain       = "games-${random_id.suffix.hex}"
+  user_pool_id = aws_cognito_user_pool.games.id
+}
+
+resource "aws_cognito_user_pool_client" "games" {
+  name         = "games-client"
+  user_pool_id = aws_cognito_user_pool.games.id
+
+  generate_secret = true
+
+  allowed_oauth_flows                  = ["code"]
+  allowed_oauth_scopes                 = ["openid", "email", "profile"]
+  allowed_oauth_flows_user_pool_client = true
+  supported_identity_providers         = ["COGNITO"]
+
+  callback_urls = ["http://${aws_eip.games_server.public_ip}/callback"]
+  logout_urls   = ["http://${aws_eip.games_server.public_ip}/"]
+
+  token_validity_units {
+    access_token  = "hours"
+    id_token      = "hours"
+    refresh_token = "days"
+  }
+
+  access_token_validity  = 8
+  id_token_validity      = 8
+  refresh_token_validity = 30
+}
+
+# ── EC2 ───────────────────────────────────────────────────────────────────────
 
 resource "aws_security_group" "games_server" {
   name        = "games-server"
@@ -77,7 +140,7 @@ resource "aws_instance" "games_server" {
   user_data = <<-EOF
     #!/bin/bash
     yum update -y
-    yum install -y python3
+    yum install -y python3 git
     mkdir -p /opt/games
   EOF
 }
