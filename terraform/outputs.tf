@@ -23,8 +23,8 @@ output "cognito_client_id" {
 }
 
 output "openai_secret_update_command" {
-  description = "Run this to set your OpenAI key in Secrets Manager"
-  value       = "aws secretsmanager put-secret-value --secret-id games/openai-key --secret-string 'sk-...'"
+  description = "Run this to set your OpenAI key in SSM"
+  value       = "aws ssm put-parameter --name /games/openai-key --value 'sk-...' --type SecureString --overwrite"
 }
 
 output "config_json" {

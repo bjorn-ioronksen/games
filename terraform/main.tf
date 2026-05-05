@@ -34,31 +34,24 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-# ── Secrets Manager ────────────────────────────────────────────────────────────
+# ── SSM Parameter Store (free) ─────────────────────────────────────────────────
 
-resource "aws_secretsmanager_secret" "openai_key" {
-  name        = "games/openai-key"
+resource "aws_ssm_parameter" "openai_key" {
+  name        = "/games/openai-key"
+  type        = "SecureString"
+  value       = "REPLACE_ME"
   description = "OpenAI API key for image generation"
-}
-
-# Placeholder — update via console or: aws secretsmanager put-secret-value --secret-id games/openai-key --secret-string 'sk-...'
-resource "aws_secretsmanager_secret_version" "openai_key" {
-  secret_id     = aws_secretsmanager_secret.openai_key.id
-  secret_string = "REPLACE_ME"
 
   lifecycle {
-    ignore_changes = [secret_string]
+    ignore_changes = [value]
   }
 }
 
-resource "aws_secretsmanager_secret" "cognito_client_secret" {
-  name        = "games/cognito-client-secret"
+resource "aws_ssm_parameter" "cognito_client_secret" {
+  name        = "/games/cognito-client-secret"
+  type        = "SecureString"
+  value       = aws_cognito_user_pool_client.games.client_secret
   description = "Cognito app client secret"
-}
-
-resource "aws_secretsmanager_secret_version" "cognito_client_secret" {
-  secret_id     = aws_secretsmanager_secret.cognito_client_secret.id
-  secret_string = aws_cognito_user_pool_client.games.client_secret
 }
 
 # ── IAM role for EC2 ───────────────────────────────────────────────────────────
@@ -84,10 +77,10 @@ resource "aws_iam_role_policy" "games_server_secrets" {
     Version = "2012-10-17"
     Statement = [{
       Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
+      Action   = ["ssm:GetParameter"]
       Resource = [
-        aws_secretsmanager_secret.openai_key.arn,
-        aws_secretsmanager_secret.cognito_client_secret.arn,
+        aws_ssm_parameter.openai_key.arn,
+        aws_ssm_parameter.cognito_client_secret.arn,
       ]
     }]
   })

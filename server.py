@@ -20,14 +20,14 @@ COGNITO_REDIRECT_URI = config.get('cognito_redirect_uri', '')
 COGNITO_REGION = config.get('cognito_region', 'eu-west-1')
 
 
-def fetch_secret(secret_id, region):
+def fetch_parameter(name, region):
     import boto3
-    client = boto3.client('secretsmanager', region_name=region)
-    return client.get_secret_value(SecretId=secret_id)['SecretString']
+    client = boto3.client('ssm', region_name=region)
+    return client.get_parameter(Name=name, WithDecryption=True)['Parameter']['Value']
 
 
-OPENAI_KEY = fetch_secret('games/openai-key', COGNITO_REGION)
-COGNITO_CLIENT_SECRET = fetch_secret('games/cognito-client-secret', COGNITO_REGION)
+OPENAI_KEY = fetch_parameter('/games/openai-key', COGNITO_REGION)
+COGNITO_CLIENT_SECRET = fetch_parameter('/games/cognito-client-secret', COGNITO_REGION)
 
 # session_token -> {expires_at, username}
 sessions = {}
