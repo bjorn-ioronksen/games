@@ -1,0 +1,30 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to server
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 600 key.pem
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'terraform' \
+            --exclude '__pycache__' \
+            --exclude 'config.json' \
+            -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+            ./ ec2-user@$HOST:/opt/games/
+          ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@$HOST \
+            'sudo systemctl restart games'
+          rm key.pem
