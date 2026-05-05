@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dino Name Builder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    a.back {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-family: inherit;
+      font-size: 1em;
+      padding: 10px 20px;
+      background: white;
+      border-radius: 50px;
+      text-decoration: none;
+      color: #7c3aed;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 10;
+    }
+
+    h1 {
+      color: white;
+      font-size: 2.2em;
+      margin: 70px 0 6px;
+      text-align: center;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 20px;
+      font-size: 1em;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      margin-bottom: 20px;
+    }
+
+    /* Name display */
+    .name-display {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .dino-name {
+      font-size: 2.4em;
+      font-weight: bold;
+      color: #1a1a2e;
+      letter-spacing: 2px;
+      min-height: 1.2em;
+      word-break: break-all;
+    }
+
+    .dino-name .part-prefix { color: #7c3aed; }
+    .dino-name .part-middle { color: #db2777; }
+    .dino-name .part-suffix { color: #059669; }
+
+    .translation {
+      font-size: 0.95em;
+      color: #888;
+      min-height: 1.4em;
+      margin-top: 4px;
+    }
+
+    .translation strong { color: #555; }
+
+    /* Section */
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .chip {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 2px solid #e0e0e0;
+      background: #f5f5f5;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .chip:hover { border-color: #c4b5fd; color: #7c3aed; background: #f3f0ff; }
+
+    .chip.active-prefix  { background: #7c3aed; border-color: #7c3aed; color: white; }
+    .chip.active-middle  { background: #db2777; border-color: #db2777; color: white; }
+    .chip.active-suffix  { background: #059669; border-color: #059669; color: white; }
+
+    .chip.custom-chip {
+      border-style: dashed;
+      color: #aaa;
+    }
+
+    /* Custom input */
+    .custom-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .custom-row input {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 6px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 50px;
+      flex: 1;
+      outline: none;
+      min-width: 0;
+    }
+
+    .custom-row input:focus { border-color: #7c3aed; }
+
+    .custom-row input.meaning {
+      flex: 1.4;
+    }
+
+    .add-btn {
+      font-family: inherit;
+      font-size: 0.85em;
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .add-prefix-btn { background: #7c3aed; }
+    .add-middle-btn { background: #db2777; }
+    .add-suffix-btn { background: #059669; }
+
+    /* Generate button */
+    .generate-btn {
+      font-family: inherit;
+      font-size: 1.2em;
+      padding: 14px 35px;
+      background: linear-gradient(135deg, #f97316, #dc2626);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 4px 15px rgba(249,115,22,0.4);
+      transition: transform 0.1s, box-shadow 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .generate-btn:hover { transform: scale(1.02); }
+    .generate-btn:active { transform: scale(0.97); }
+    .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Image result */
+    .image-card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      text-align: center;
+      display: none;
+    }
+
+    .image-card.show { display: block; }
+
+    .image-card h2 {
+      font-size: 1.6em;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .image-card .image-translation {
+      color: #888;
+      font-size: 0.9em;
+      margin-bottom: 16px;
+    }
+
+    .dino-image {
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px;
+      display: block;
+      margin: 0 auto;
+      min-height: 200px;
+      background: #f3f0ff;
+    }
+
+    .loading-text {
+      color: #7c3aed;
+      font-size: 1em;
+      margin: 20px 0;
+      display: none;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2px dashed #e0e0e0;
+      margin: 16px 0;
+    }
+
+    .reset-btn {
+      font-family: inherit;
+      font-size: 0.9em;
+      padding: 10px 25px;
+      background: transparent;
+      color: #7c3aed;
+      border: 2px solid #7c3aed;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .reset-btn:hover { background: #7c3aed; color: white; }
+  </style>
+</head>
+<body>
+  <a href="../index.html" class="back">← Back</a>
+
+  <h1>🦕 Dino Name Builder</h1>
+  <p class="subtitle">Mix parts to create your own dinosaur!</p>
+
+  <div class="card">
+    <!-- Live name display -->
+    <div class="name-display">
+      <div class="dino-name" id="dino-name">???</div>
+      <div class="translation" id="translation">Pick some parts below to build your dinosaur name</div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- PREFIX -->
+    <div class="section">
+      <div class="section-title">🟣 Prefix — the start of the name</div>
+      <div class="chips" id="prefix-chips"></div>
+      <div class="custom-row">
+        <input type="text" id="custom-prefix" placeholder="e.g. igno" maxlength="12">
+        <input type="text" id="custom-prefix-meaning" class="meaning" placeholder="meaning, e.g. fire" maxlength="20">
+        <button class="add-btn add-prefix-btn" onclick="addCustom('prefix')">+ Add</button>
+      </div>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="section">
+      <div class="section-title">🩷 Middle — optional, can pick more than one</div>
+      <div class="chips" id="middle-chips"></div>
+      <div class="custom-row">
+        <input type="text" id="custom-middle" placeholder="e.g. cephalo" maxlength="12">
+        <input type="text" id="custom-middle-meaning" class="meaning" placeholder="meaning, e.g. headed" maxlength="20">
+        <button class="add-btn add-middle-btn" onclick="addCustom('middle')">+ Add</button>
+      </div>
+    </div>
+
+    <!-- SUFFIX -->
+    <div class="section">
+      <div class="section-title">🟢 Suffix — the end of the name</div>
+      <div class="chips" id="suffix-chips"></div>
+      <div class="custom-row">
+        <input type="text" id="custom-suffix" placeholder="e.g. natrix" maxlength="12">
+        <input type="text" id="custom-suffix-meaning" class="meaning" placeholder="meaning, e.g. swimmer" maxlength="20">
+        <button class="add-btn add-suffix-btn" onclick="addCustom('suffix')">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="generate-btn" onclick="generate()" id="gen-btn">🎨 Draw My Dinosaur!</button>
+
+  <div class="image-card" id="image-card">
+    <h2 id="result-name"></h2>
+    <div class="image-translation" id="result-translation"></div>
+    <p class="loading-text" id="loading-text">🦕 Drawing your dinosaur... this takes a few seconds!</p>
+    <img class="dino-image" id="dino-image" alt="Your dinosaur" style="display:none">
+    <br>
+    <button class="reset-btn" onclick="resetAll()">🔄 Build another dinosaur</button>
+  </div>
+
+  <script>
+    const data = {
+      prefix: [
+        { part: "mega",    meaning: "giant" },
+        { part: "micro",   meaning: "tiny" },
+        { part: "tri",     meaning: "three" },
+        { part: "di",      meaning: "two" },
+        { part: "tyranno", meaning: "tyrant" },
+        { part: "veloci",  meaning: "swift" },
+        { part: "brachy",  meaning: "short" },
+        { part: "longi",   meaning: "long" },
+        { part: "spino",   meaning: "spined" },
+        { part: "carno",   meaning: "flesh-eating" },
+        { part: "pachy",   meaning: "thick" },
+        { part: "proto",   meaning: "first" },
+        { part: "aqua",    meaning: "water" },
+        { part: "pyro",    meaning: "fire" },
+        { part: "cryo",    meaning: "ice" },
+        { part: "nocti",   meaning: "night" },
+        { part: "auri",    meaning: "golden" },
+        { part: "gigas",   meaning: "colossal" },
+        { part: "omni",    meaning: "all-devouring" },
+        { part: "ferro",   meaning: "iron" },
+      ],
+      middle: [
+        { part: "sauro",   meaning: "lizard" },
+        { part: "cephalo", meaning: "headed" },
+        { part: "donto",   meaning: "toothed" },
+        { part: "cera",    meaning: "horned" },
+        { part: "podo",    meaning: "footed" },
+        { part: "dactyl",  meaning: "fingered" },
+        { part: "gnath",   meaning: "jawed" },
+        { part: "pter",    meaning: "winged" },
+        { part: "orni",    meaning: "bird-like" },
+        { part: "mimus",   meaning: "mimic" },
+        { part: "loph",    meaning: "crested" },
+        { part: "rhino",   meaning: "nosed" },
+      ],
+      suffix: [
+        { part: "saurus",  meaning: "lizard" },
+        { part: "raptor",  meaning: "plunderer" },
+        { part: "don",     meaning: "tooth" },
+        { part: "tops",    meaning: "face" },
+        { part: "rex",     meaning: "king" },
+        { part: "titan",   meaning: "titan" },
+        { part: "gnathus", meaning: "jaw" },
+        { part: "natrix",  meaning: "swimmer" },
+        { part: "ator",    meaning: "destroyer" },
+        { part: "mimus",   meaning: "mimic" },
+        { part: "ornis",   meaning: "bird" },
+      ],
+    };
+
+    const selected = { prefix: null, middle: new Set(), suffix: null };
+
+    function buildChips(type) {
+      const container = document.getElementById(`${type}-chips`);
+      container.innerHTML = '';
+      data[type].forEach((item, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = `${item.part} (${item.meaning})`;
+        btn.dataset.index = i;
+        btn.onclick = () => toggleChip(type, i, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function toggleChip(type, index, btn) {
+      if (type === 'middle') {
+        if (selected.middle.has(index)) {
+          selected.middle.delete(index);
+          btn.classList.remove('active-middle');
+        } else {
+          selected.middle.add(index);
+          btn.classList.add('active-middle');
+        }
+      } else {
+        // deselect previous
+        document.querySelectorAll(`#${type}-chips .chip`).forEach(c => c.classList.remove(`active-${type}`));
+        if (selected[type] === index) {
+          selected[type] = null;
+        } else {
+          selected[type] = index;
+          btn.classList.add(`active-${type}`);
+        }
+      }
+      updateDisplay();
+    }
+
+    function addCustom(type) {
+      const partInput = document.getElementById(`custom-${type}`);
+      const meaningInput = document.getElementById(`custom-${type}-meaning`);
+      const part = partInput.value.trim().toLowerCase();
+      const meaning = meaningInput.value.trim().toLowerCase();
+      if (!part) return;
+      data[type].push({ part, meaning: meaning || '?' });
+      partInput.value = '';
+      meaningInput.value = '';
+      buildChips(type);
+      // auto-select the new one
+      const newIndex = data[type].length - 1;
+      const chips = document.querySelectorAll(`#${type}-chips .chip`);
+      toggleChip(type, newIndex, chips[newIndex]);
+    }
+
+    function updateDisplay() {
+      const parts = [];
+      const meanings = [];
+
+      if (selected.prefix !== null) {
+        const p = data.prefix[selected.prefix];
+        parts.push(`<span class="part-prefix">${p.part}</span>`);
+        meanings.push(`<strong>${p.part}</strong> = ${p.meaning}`);
+      }
+
+      [...selected.middle].sort((a,b) => a-b).forEach(i => {
+        const m = data.middle[i];
+        parts.push(`<span class="part-middle">${m.part}</span>`);
+        meanings.push(`<strong>${m.part}</strong> = ${m.meaning}`);
+      });
+
+      if (selected.suffix !== null) {
+        const s = data.suffix[selected.suffix];
+        parts.push(`<span class="part-suffix">${s.part}</span>`);
+        meanings.push(`<strong>${s.part}</strong> = ${s.meaning}`);
+      }
+
+      const nameEl = document.getElementById('dino-name');
+      const transEl = document.getElementById('translation');
+
+      if (parts.length === 0) {
+        nameEl.innerHTML = '???';
+        transEl.innerHTML = 'Pick some parts below to build your dinosaur name';
+      } else {
+        nameEl.innerHTML = parts.join('');
+        transEl.innerHTML = meanings.join(' + ');
+      }
+    }
+
+    function buildName() {
+      let name = '';
+      if (selected.prefix !== null) name += data.prefix[selected.prefix].part;
+      [...selected.middle].sort((a,b) => a-b).forEach(i => { name += data.middle[i].part; });
+      if (selected.suffix !== null) name += data.suffix[selected.suffix].part;
+      return name;
+    }
+
+    function buildDescription() {
+      const parts = [];
+      if (selected.prefix !== null) parts.push(data.prefix[selected.prefix].meaning);
+      [...selected.middle].sort((a,b) => a-b).forEach(i => parts.push(data.middle[i].meaning));
+      if (selected.suffix !== null) parts.push(data.suffix[selected.suffix].meaning);
+      return parts.join(', ');
+    }
+
+    function generate() {
+      const name = buildName();
+      if (name.length < 2) {
+        alert('Pick at least one part first!');
+        return;
+      }
+
+      const description = buildDescription();
+      const displayName = document.getElementById('dino-name').innerText;
+
+      document.getElementById('result-name').textContent = displayName;
+      document.getElementById('result-translation').textContent = description ? `"${description}"` : '';
+
+      const card = document.getElementById('image-card');
+      card.classList.add('show');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      const img = document.getElementById('dino-image');
+      const loading = document.getElementById('loading-text');
+      img.style.display = 'none';
+      loading.style.display = 'block';
+
+      const prompt = `a ${description} dinosaur called ${displayName}, prehistoric creature, full body, side view, colourful digital illustration, white background, no text`;
+      const encoded = encodeURIComponent(prompt);
+      const seed = Math.floor(Math.random() * 999999);
+      const url = `/api/image?prompt=${encoded}&seed=${seed}`;
+
+      loading.textContent = '🦕 Drawing your dinosaur... this can take up to 30 seconds!';
+
+      img.onload = () => {
+        img.style.display = 'block';
+        loading.style.display = 'none';
+      };
+      img.onerror = () => {
+        loading.innerHTML = '😢 Could not draw the dinosaur from here.<br><a href="' + url + '" target="_blank" style="color:#7c3aed">👉 Click here to open the image directly</a>';
+      };
+      img.src = url;
+    }
+
+    function resetAll() {
+      selected.prefix = null;
+      selected.middle = new Set();
+      selected.suffix = null;
+      document.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+      updateDisplay();
+      document.getElementById('image-card').classList.remove('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Init
+    buildChips('prefix');
+    buildChips('middle');
+    buildChips('suffix');
+    updateDisplay();
+  </script>
+</body>
+</html>

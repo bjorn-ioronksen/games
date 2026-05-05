@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 30px;
+      padding: 40px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    h1 { font-size: 2em; color: #333; margin-bottom: 8px; }
+    p { color: #888; margin-bottom: 24px; }
+    input {
+      font-family: inherit;
+      font-size: 1.1em;
+      padding: 12px 18px;
+      border: 3px solid #e0e0e0;
+      border-radius: 15px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 16px;
+      outline: none;
+    }
+    input:focus { border-color: #7c3aed; }
+    button {
+      font-family: inherit;
+      font-size: 1.1em;
+      padding: 13px 35px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+    }
+    button:hover { opacity: 0.9; }
+    .error { color: #ef4444; font-size: 0.9em; margin-top: 12px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎮 Games</h1>
+    <p>Enter the password to play!</p>
+    <form method="POST" action="/login">
+      <input type="password" name="password" placeholder="Password..." autofocus>
+      <button type="submit">Let me in! 🚀</button>
+    </form>
+    <div class="error" id="err">Wrong password — try again!</div>
+    <script>
+      if (window.location.search.includes('wrong')) {
+        document.getElementById('err').style.display = 'block';
+      }
+    </script>
+  </div>
+</body>
+</html>
