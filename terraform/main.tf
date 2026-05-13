@@ -150,8 +150,8 @@ resource "aws_security_group" "games_server" {
   description = "Games server"
 
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = 40285
+    to_port     = 40285
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

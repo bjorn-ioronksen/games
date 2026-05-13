@@ -165,10 +165,11 @@ class ThreadedServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    server = ThreadedServer(('', 80), Handler)
+    port = int(os.environ.get('PORT', 80))
+    server = ThreadedServer(('', port), Handler)
     has_openai = '✅ OpenAI DALL-E active' if OPENAI_KEY else '⚠️  No OpenAI key — using fallback images'
     has_auth = f'🔒 Password protected' if SITE_PASSWORD else '🔓 No password set'
-    print(f'Server running on http://0.0.0.0:80')
+    print(f'Server running on http://0.0.0.0:{port}')
     print(has_auth)
     print(has_openai)
     server.serve_forever()

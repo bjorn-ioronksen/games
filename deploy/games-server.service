@@ -1,0 +1,17 @@
+[Unit]
+Description=Luke Games Server
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/games
+Environment=PORT=8080
+ExecStart=/usr/bin/python3 /opt/games/server.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
