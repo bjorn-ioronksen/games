@@ -4,10 +4,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
   }
 }
 
@@ -30,11 +26,7 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-resource "random_id" "suffix" {
-  byte_length = 4
-}
-
-# ── SSM Parameter Store (free) ─────────────────────────────────────────────────
+# ── SSM Parameter Store ────────────────────────────────────────────────────────
 
 resource "aws_ssm_parameter" "openai_key" {
   name        = "/games/openai-key"
@@ -45,13 +37,6 @@ resource "aws_ssm_parameter" "openai_key" {
   lifecycle {
     ignore_changes = [value]
   }
-}
-
-resource "aws_ssm_parameter" "cognito_client_secret" {
-  name        = "/games/cognito-client-secret"
-  type        = "SecureString"
-  value       = aws_cognito_user_pool_client.games.client_secret
-  description = "Cognito app client secret"
 }
 
 # ── IAM role for EC2 ───────────────────────────────────────────────────────────
@@ -78,10 +63,7 @@ resource "aws_iam_role_policy" "games_server_secrets" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["ssm:GetParameter"]
-      Resource = [
-        aws_ssm_parameter.openai_key.arn,
-        aws_ssm_parameter.cognito_client_secret.arn,
-      ]
+      Resource = [aws_ssm_parameter.openai_key.arn]
     }]
   })
 }
@@ -89,58 +71,6 @@ resource "aws_iam_role_policy" "games_server_secrets" {
 resource "aws_iam_instance_profile" "games_server" {
   name = "games-server-profile"
   role = aws_iam_role.games_server.name
-}
-
-# ── Cognito ────────────────────────────────────────────────────────────────────
-
-resource "aws_cognito_user_pool" "games" {
-  name = "games-users"
-
-  password_policy {
-    minimum_length    = 8
-    require_uppercase = false
-    require_symbols   = false
-    require_numbers   = false
-  }
-
-  auto_verified_attributes = ["email"]
-
-  account_recovery_setting {
-    recovery_mechanism {
-      name     = "verified_email"
-      priority = 1
-    }
-  }
-}
-
-resource "aws_cognito_user_pool_domain" "games" {
-  domain       = "games-${random_id.suffix.hex}"
-  user_pool_id = aws_cognito_user_pool.games.id
-}
-
-resource "aws_cognito_user_pool_client" "games" {
-  name         = "games-client"
-  user_pool_id = aws_cognito_user_pool.games.id
-
-  generate_secret = true
-
-  allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["openid", "email", "profile"]
-  allowed_oauth_flows_user_pool_client = true
-  supported_identity_providers         = ["COGNITO"]
-
-  callback_urls = ["http://${aws_eip.games_server.public_ip}/callback"]
-  logout_urls   = ["http://${aws_eip.games_server.public_ip}/"]
-
-  token_validity_units {
-    access_token  = "hours"
-    id_token      = "hours"
-    refresh_token = "days"
-  }
-
-  access_token_validity  = 8
-  id_token_validity      = 8
-  refresh_token_validity = 30
 }
 
 # ── EC2 ───────────────────────────────────────────────────────────────────────
@@ -153,7 +83,10 @@ resource "aws_security_group" "games_server" {
     from_port   = 40285
     to_port     = 40285
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      "213.152.255.113/32", # work
+      "0.0.0.0/0",          # remove once home IP added
+    ]
   }
 
   ingress {
@@ -185,7 +118,7 @@ resource "aws_key_pair" "games_server" {
 
 resource "aws_instance" "games_server" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t3.micro"
+  instance_type               = "t3.small"
   key_name                    = aws_key_pair.games_server.key_name
   vpc_security_group_ids      = [aws_security_group.games_server.id]
   iam_instance_profile        = aws_iam_instance_profile.games_server.name
@@ -201,6 +134,10 @@ resource "aws_instance" "games_server" {
     pip3 install boto3
     mkdir -p /opt/games
   EOF
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "aws_eip" "games_server" {
