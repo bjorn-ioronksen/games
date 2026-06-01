@@ -118,7 +118,7 @@ resource "aws_key_pair" "games_server" {
 
 resource "aws_instance" "games_server" {
   ami                         = data.aws_ami.amazon_linux.id
-  instance_type               = "t3.small"
+  instance_type               = "t3.nano"
   key_name                    = aws_key_pair.games_server.key_name
   vpc_security_group_ids      = [aws_security_group.games_server.id]
   iam_instance_profile        = aws_iam_instance_profile.games_server.name
