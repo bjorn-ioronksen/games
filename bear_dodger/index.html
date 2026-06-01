@@ -158,6 +158,11 @@
     <h2>Got you!</h2>
     <div class="score-line">You survived <strong id="final-score">0</strong> seconds!</div>
     <div class="best-line" id="best-line"></div>
+    <div id="initials-row" style="margin:10px 0">
+      <input id="initials-input" maxlength="3" placeholder="AAA" style="width:4em;font-size:1.4em;text-align:center;text-transform:uppercase;border:2px solid #ccc;border-radius:6px;padding:4px">
+      <button class="over-btn" id="submit-score-btn" style="margin-left:8px">Submit 🏆</button>
+    </div>
+    <div id="leaderboard" style="font-size:0.95em;margin-bottom:8px"></div>
     <button class="over-btn" id="again-btn">Play Again 🔄</button>
     <button class="over-btn" id="change-btn">Change Character</button>
   </div>
@@ -407,6 +412,18 @@ function draw() {
   ctx.beginPath(); ctx.roundRect(10, 8, barW * fill, 10, 5); ctx.fill();
 }
 
+function renderLeaderboard(entries) {
+  const lb = document.getElementById('leaderboard');
+  if (!entries.length) { lb.textContent = ''; return; }
+  lb.innerHTML = '<strong>🏆 Top Scores</strong><br>' +
+    entries.map((e, i) => `${i+1}. ${e.initials} — ${e.score}s`).join('<br>');
+}
+
+function fetchLeaderboard() {
+  fetch('/api/scores?game=bear_dodger')
+    .then(r => r.json()).then(renderLeaderboard).catch(() => {});
+}
+
 function gameOver(bearEmoji) {
   cancelAnimationFrame(animId);
   const secs = Math.floor(elapsed);
@@ -419,6 +436,24 @@ function gameOver(bearEmoji) {
   document.getElementById('best-line').textContent = isNew
     ? '🎉 New best score!'
     : `Best: ${best} seconds`;
+
+  const input = document.getElementById('initials-input');
+  input.value = '';
+  document.getElementById('initials-row').style.display = '';
+  fetchLeaderboard();
+
+  document.getElementById('submit-score-btn').onclick = () => {
+    const initials = input.value.trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || '???';
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game: 'bear_dodger', initials, score: secs })
+    }).then(r => r.json()).then(entries => {
+      renderLeaderboard(entries);
+      document.getElementById('initials-row').style.display = 'none';
+    }).catch(() => {});
+  };
+
   document.getElementById('over-screen').style.display = 'flex';
 }
 

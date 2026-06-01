@@ -8,6 +8,7 @@ import json
 import os
 import secrets
 import time
+import threading
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
 with open(CONFIG_PATH) as f:
@@ -18,6 +19,19 @@ OPENAI_KEY = config.get('openai_key', '')
 
 # session_token -> expires_at
 sessions = {}
+
+SCORES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scores.json')
+scores_lock = threading.Lock()
+
+def load_scores():
+    if not os.path.exists(SCORES_PATH):
+        return {}
+    with open(SCORES_PATH) as f:
+        return json.load(f)
+
+def save_scores(data):
+    with open(SCORES_PATH, 'w') as f:
+        json.dump(data, f)
 
 ssl_ctx = ssl.create_default_context()
 ssl_ctx.check_hostname = False
@@ -54,6 +68,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if self.path.startswith('/api/image'):
             self.handle_image()
+        elif self.path.startswith('/api/scores'):
+            self.handle_get_scores()
         else:
             super().do_GET()
 
@@ -72,6 +88,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
             else:
                 self.redirect('/login?wrong')
+        elif self.path == '/api/scores':
+            self.handle_post_score()
         else:
             self.send_response(404)
             self.end_headers()
@@ -154,6 +172,42 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         img_req = urllib.request.Request(image_url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(img_req, timeout=30, context=ssl_ctx) as img_resp:
             return img_resp.read()
+
+    def handle_get_scores(self):
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        game = params.get('game', [''])[0]
+        with scores_lock:
+            data = load_scores()
+        entries = data.get(game, [])
+        body = json.dumps(entries).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(body)
+
+    def handle_post_score(self):
+        length = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(length).decode())
+        game = str(body.get('game', ''))[:32]
+        initials = str(body.get('initials', '???')).upper()[:3]
+        score = int(body.get('score', 0))
+        if not game:
+            self.send_response(400)
+            self.end_headers()
+            return
+        with scores_lock:
+            data = load_scores()
+            entries = data.get(game, [])
+            entries.append({'initials': initials, 'score': score})
+            entries.sort(key=lambda x: x['score'], reverse=True)
+            data[game] = entries[:10]
+            save_scores(data)
+        resp = json.dumps(data[game]).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(resp)
 
     def log_message(self, format, *args):
         pass
