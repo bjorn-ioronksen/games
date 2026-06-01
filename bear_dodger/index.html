@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Bear Dodger!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #2d5a27, #4a7c3f, #2d5a27);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── PICK SCREEN ── */
+    #pick-screen {
+      text-align: center;
+      color: white;
+    }
+    #pick-screen h1 {
+      font-size: 2.8em;
+      text-shadow: 0 3px 10px rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+    }
+    #pick-screen p {
+      font-size: 1.1em;
+      opacity: 0.85;
+      margin-bottom: 30px;
+    }
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      max-width: 420px;
+      margin: 0 auto 30px;
+    }
+    .char-btn {
+      background: white;
+      border: 4px solid transparent;
+      border-radius: 20px;
+      padding: 14px 10px;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+      font-family: inherit;
+    }
+    .char-btn:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .char-btn.selected { border-color: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.4); transform: scale(1.1); }
+    .char-emoji { font-size: 2.4em; display: block; }
+    .char-name { font-size: 0.7em; color: #555; margin-top: 4px; }
+    #start-btn {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 50px;
+      font-size: 1.4em;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      transition: transform 0.12s;
+    }
+    #start-btn:hover { transform: scale(1.05); }
+    #start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── GAME SCREEN ── */
+    #game-screen { display: none; flex-direction: column; align-items: center; }
+    #hud {
+      color: white;
+      font-size: 1.3em;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      display: flex;
+      gap: 30px;
+    }
+    canvas {
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      display: block;
+      touch-action: none;
+    }
+    #touch-hint {
+      color: rgba(255,255,255,0.65);
+      font-size: 0.85em;
+      margin-top: 10px;
+    }
+
+    /* ── GAME OVER ── */
+    #over-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #over-box {
+      background: white;
+      border-radius: 28px;
+      padding: 40px 50px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 340px;
+    }
+    #over-box h2 { font-size: 2.2em; margin-bottom: 8px; color: #c0392b; }
+    #over-box .score-line { font-size: 1.2em; color: #555; margin-bottom: 6px; }
+    #over-box .best-line { font-size: 1em; color: #888; margin-bottom: 24px; }
+    #over-box .caught-emoji { font-size: 3em; margin-bottom: 10px; display: block; }
+    .over-btn {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1em;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .over-btn:hover { transform: scale(1.03); }
+    #again-btn { background: #f59e0b; color: white; }
+    #change-btn { background: #e5e7eb; color: #333; }
+  </style>
+</head>
+<body>
+
+<!-- PICK SCREEN -->
+<div id="pick-screen">
+  <h1>🐻 Bear Dodger!</h1>
+  <p>Pick your character, then dodge the bears!</p>
+  <div class="character-grid" id="char-grid"></div>
+  <button id="start-btn" disabled>Let's Go! 🏃</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div id="hud">
+    <span>⏱ <span id="score-display">0</span>s</span>
+    <span>🏆 Best: <span id="best-display">0</span>s</span>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div id="touch-hint">Tap/drag to move · Arrow keys or WASD</div>
+</div>
+
+<!-- GAME OVER -->
+<div id="over-screen">
+  <div id="over-box">
+    <span id="caught-emoji" class="caught-emoji">🐻</span>
+    <h2>Got you!</h2>
+    <div class="score-line">You survived <strong id="final-score">0</strong> seconds!</div>
+    <div class="best-line" id="best-line"></div>
+    <button class="over-btn" id="again-btn">Play Again 🔄</button>
+    <button class="over-btn" id="change-btn">Change Character</button>
+  </div>
+</div>
+
+<script>
+const CHARACTERS = [
+  { emoji: '🦄', name: 'Unicorn' },
+  { emoji: '🐱', name: 'Cat' },
+  { emoji: '🐶', name: 'Dog' },
+  { emoji: '🐰', name: 'Bunny' },
+  { emoji: '🦊', name: 'Fox' },
+  { emoji: '🐸', name: 'Frog' },
+  { emoji: '🦋', name: 'Butterfly' },
+  { emoji: '🐧', name: 'Penguin' },
+  { emoji: '🦁', name: 'Lion' },
+  { emoji: '🐼', name: 'Panda' },
+  { emoji: '🦩', name: 'Flamingo' },
+  { emoji: '🐙', name: 'Octopus' },
+];
+
+const BEARS = ['🐻', '🐻‍❄️', '🧸'];
+
+// ── Build character grid ──
+const grid = document.getElementById('char-grid');
+let selectedChar = null;
+CHARACTERS.forEach((c, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'char-btn';
+  btn.innerHTML = `<span class="char-emoji">${c.emoji}</span><span class="char-name">${c.name}</span>`;
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedChar = c;
+    document.getElementById('start-btn').disabled = false;
+  });
+  grid.appendChild(btn);
+});
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('again-btn').addEventListener('click', () => {
+  document.getElementById('over-screen').style.display = 'none';
+  startGame();
+});
+document.getElementById('change-btn').addEventListener('click', () => {
+  document.getElementById('over-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('pick-screen').style.display = '';
+});
+
+// ── Canvas setup ──
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const W = Math.min(window.innerWidth - 20, 480);
+const H = Math.min(window.innerHeight - 120, 560);
+canvas.width = W;
+canvas.height = H;
+
+// ── Game state ──
+let player, bears, startTime, elapsed, animId, best;
+best = parseInt(localStorage.getItem('bearDodgerBest') || '0');
+
+const PLAYER_SIZE = 44;
+const BEAR_SIZE = 46;
+const PLAYER_SPEED = 5;
+const keys = {};
+
+function startGame() {
+  document.getElementById('pick-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  document.getElementById('best-display').textContent = best;
+
+  player = { x: W / 2, y: H / 2, vx: 0, vy: 0 };
+  bears = [];
+  startTime = performance.now();
+  elapsed = 0;
+  cancelAnimationFrame(animId);
+  loop();
+}
+
+function spawnBear() {
+  // Bears come from random edges
+  const side = Math.floor(Math.random() * 4); // 0=top,1=right,2=bottom,3=left
+  let x, y, vx, vy;
+  const speed = 2.2 + elapsed * 0.25; // speed up over time
+  if (side === 0) { x = Math.random() * W; y = -BEAR_SIZE; vx = 0; vy = speed; }
+  else if (side === 1) { x = W + BEAR_SIZE; y = Math.random() * H; vx = -speed; vy = 0; }
+  else if (side === 2) { x = Math.random() * W; y = H + BEAR_SIZE; vx = 0; vy = -speed; }
+  else { x = -BEAR_SIZE; y = Math.random() * H; vx = speed; vy = 0; }
+  // Aim a little toward the player
+  const dx = player.x - x, dy = player.y - y;
+  const dist = Math.hypot(dx, dy);
+  const homing = 0.35;
+  vx = vx * (1 - homing) + (dx / dist) * speed * homing;
+  vy = vy * (1 - homing) + (dy / dist) * speed * homing;
+  bears.push({ x, y, vx, vy, emoji: BEARS[Math.floor(Math.random() * BEARS.length)] });
+}
+
+let lastSpawn = 0;
+function spawnInterval() {
+  // Start at 1.8s, shrink to 0.6s as time goes on
+  return Math.max(0.6, 1.8 - elapsed * 0.08);
+}
+
+function loop(ts) {
+  animId = requestAnimationFrame(loop);
+  elapsed = (performance.now() - startTime) / 1000;
+
+  // Spawn bears
+  if (elapsed - lastSpawn > spawnInterval()) {
+    spawnBear();
+    lastSpawn = elapsed;
+  }
+
+  // Move player
+  let mx = 0, my = 0;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) mx -= PLAYER_SPEED;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) mx += PLAYER_SPEED;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) my -= PLAYER_SPEED;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) my += PLAYER_SPEED;
+  // normalise diagonal
+  if (mx && my) { mx *= 0.707; my *= 0.707; }
+  // touch velocity
+  mx += player.vx; my += player.vy;
+  player.x = Math.max(PLAYER_SIZE/2, Math.min(W - PLAYER_SIZE/2, player.x + mx));
+  player.y = Math.max(PLAYER_SIZE/2, Math.min(H - PLAYER_SIZE/2, player.y + my));
+  player.vx *= 0.75; player.vy *= 0.75; // friction
+
+  // Move bears
+  for (const b of bears) {
+    b.x += b.vx;
+    b.y += b.vy;
+  }
+  // Remove off-screen bears (went past player area)
+  bears = bears.filter(b => b.x > -100 && b.x < W+100 && b.y > -100 && b.y < H+100);
+
+  // Collision
+  for (const b of bears) {
+    const dx = b.x - player.x, dy = b.y - player.y;
+    if (Math.hypot(dx, dy) < (PLAYER_SIZE + BEAR_SIZE) / 2 - 8) {
+      gameOver(b.emoji);
+      return;
+    }
+  }
+
+  // Draw
+  draw();
+
+  // Update HUD
+  document.getElementById('score-display').textContent = Math.floor(elapsed);
+}
+
+function draw() {
+  // Background — grass
+  ctx.fillStyle = '#4a7c3f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid pattern
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Bears
+  ctx.font = `${BEAR_SIZE}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const b of bears) {
+    ctx.save();
+    // rotate toward movement direction
+    ctx.translate(b.x, b.y);
+    ctx.rotate(Math.atan2(b.vy, b.vx) - Math.PI/2);
+    ctx.fillText(b.emoji, 0, 0);
+    ctx.restore();
+  }
+
+  // Player shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(player.x, player.y + PLAYER_SIZE/2 - 4, PLAYER_SIZE/3, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Player
+  ctx.font = `${PLAYER_SIZE}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(selectedChar.emoji, player.x, player.y);
+
+  // Timer bar at top
+  const barW = W - 20;
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.roundRect(10, 8, barW, 10, 5); ctx.fill();
+  const fill = Math.min(1, elapsed / 60); // full at 60s
+  ctx.fillStyle = fill < 0.5 ? '#4ade80' : fill < 0.8 ? '#facc15' : '#f87171';
+  ctx.beginPath(); ctx.roundRect(10, 8, barW * fill, 10, 5); ctx.fill();
+}
+
+function gameOver(bearEmoji) {
+  cancelAnimationFrame(animId);
+  const secs = Math.floor(elapsed);
+  let isNew = false;
+  if (secs > best) { best = secs; localStorage.setItem('bearDodgerBest', best); isNew = true; }
+  document.getElementById('best-display').textContent = best;
+
+  document.getElementById('caught-emoji').textContent = bearEmoji;
+  document.getElementById('final-score').textContent = secs;
+  document.getElementById('best-line').textContent = isNew
+    ? '🎉 New best score!'
+    : `Best: ${best} seconds`;
+  document.getElementById('over-screen').style.display = 'flex';
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => { keys[e.key] = true; e.preventDefault(); });
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ── Touch / mouse drag ──
+let lastTouch = null;
+function handleMove(cx, cy) {
+  if (!lastTouch) { lastTouch = { x: cx, y: cy }; return; }
+  const dx = cx - lastTouch.x, dy = cy - lastTouch.y;
+  player.vx = dx * 1.5;
+  player.vy = dy * 1.5;
+  lastTouch = { x: cx, y: cy };
+}
+canvas.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  lastTouch = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  handleMove(t.clientX, t.clientY);
+}, { passive: true });
+canvas.addEventListener('touchend', () => { lastTouch = null; }, { passive: true });
+canvas.addEventListener('mousedown', e => { lastTouch = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mousemove', e => { if (e.buttons) handleMove(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', () => { lastTouch = null; });
+</script>
+</body>
+</html>
