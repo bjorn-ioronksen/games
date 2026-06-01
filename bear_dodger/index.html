@@ -142,7 +142,9 @@
 <!-- GAME SCREEN -->
 <div id="game-screen">
   <div id="hud">
+    <a href="../index.html" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.9em;">← Menu</a>
     <span>⏱ <span id="score-display">0</span>s</span>
+    <span>⭐ Lv <span id="level-display">1</span></span>
     <span>🏆 Best: <span id="best-display">0</span>s</span>
   </div>
   <canvas id="canvas"></canvas>
@@ -217,12 +219,23 @@ canvas.height = H;
 
 // ── Game state ──
 let player, bears, startTime, elapsed, animId, best;
+let level, lastLevelUp, levelFlash;
 best = parseInt(localStorage.getItem('bearDodgerBest') || '0');
 
 const PLAYER_SIZE = 44;
 const BEAR_SIZE = 46;
 const PLAYER_SPEED = 5;
 const keys = {};
+
+// Level thresholds (seconds of survival to reach each level)
+const LEVEL_TIMES = [0, 8, 18, 30, 45, 63, 84];
+
+function currentLevel() {
+  for (let i = LEVEL_TIMES.length - 1; i >= 0; i--) {
+    if (elapsed >= LEVEL_TIMES[i]) return i + 1;
+  }
+  return 1;
+}
 
 function startGame() {
   document.getElementById('pick-screen').style.display = 'none';
@@ -233,40 +246,51 @@ function startGame() {
   bears = [];
   startTime = performance.now();
   elapsed = 0;
+  level = 1;
+  lastLevelUp = null;
+  levelFlash = null;
+  lastSpawn = -999;
   cancelAnimationFrame(animId);
   loop();
 }
 
 function spawnBear() {
-  // Bears come from random edges
-  const side = Math.floor(Math.random() * 4); // 0=top,1=right,2=bottom,3=left
+  const side = Math.floor(Math.random() * 4);
   let x, y, vx, vy;
-  const speed = 2.2 + elapsed * 0.25; // speed up over time
+  const lv = currentLevel();
+  const speed = 1.8 + lv * 0.55;
   if (side === 0) { x = Math.random() * W; y = -BEAR_SIZE; vx = 0; vy = speed; }
   else if (side === 1) { x = W + BEAR_SIZE; y = Math.random() * H; vx = -speed; vy = 0; }
   else if (side === 2) { x = Math.random() * W; y = H + BEAR_SIZE; vx = 0; vy = -speed; }
   else { x = -BEAR_SIZE; y = Math.random() * H; vx = speed; vy = 0; }
-  // Aim a little toward the player
   const dx = player.x - x, dy = player.y - y;
   const dist = Math.hypot(dx, dy);
-  const homing = 0.35;
+  const homing = 0.25 + lv * 0.04;
   vx = vx * (1 - homing) + (dx / dist) * speed * homing;
   vy = vy * (1 - homing) + (dy / dist) * speed * homing;
   bears.push({ x, y, vx, vy, emoji: BEARS[Math.floor(Math.random() * BEARS.length)] });
 }
 
-let lastSpawn = 0;
+let lastSpawn = -999;
 function spawnInterval() {
-  // Start at 1.8s, shrink to 0.6s as time goes on
-  return Math.max(0.6, 1.8 - elapsed * 0.08);
+  const lv = currentLevel();
+  // Level 1: 1.2s, each level reduces by ~0.15s, minimum 0.35s
+  return Math.max(0.35, 1.2 - (lv - 1) * 0.15);
 }
 
 function loop(ts) {
   animId = requestAnimationFrame(loop);
   elapsed = (performance.now() - startTime) / 1000;
 
-  // Spawn bears
-  if (elapsed - lastSpawn > spawnInterval()) {
+  // Level up check
+  const newLevel = currentLevel();
+  if (newLevel > level) {
+    level = newLevel;
+    levelFlash = { text: `Level ${level}! 🐻`, start: elapsed };
+  }
+
+  // Spawn bears — first one after 1s, then regular interval
+  if (elapsed >= 1.0 && elapsed - lastSpawn > spawnInterval()) {
     spawnBear();
     lastSpawn = elapsed;
   }
@@ -307,6 +331,7 @@ function loop(ts) {
 
   // Update HUD
   document.getElementById('score-display').textContent = Math.floor(elapsed);
+  document.getElementById('level-display').textContent = level;
 }
 
 function draw() {
@@ -334,16 +359,44 @@ function draw() {
   }
 
   // Player shadow
+  ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.beginPath();
   ctx.ellipse(player.x, player.y + PLAYER_SIZE/2 - 4, PLAYER_SIZE/3, 6, 0, 0, Math.PI*2);
   ctx.fill();
+  ctx.restore();
 
   // Player
   ctx.font = `${PLAYER_SIZE}px serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(selectedChar.emoji, player.x, player.y);
+
+  // Level flash
+  if (levelFlash) {
+    const age = elapsed - levelFlash.start;
+    const duration = 1.8;
+    if (age < duration) {
+      const t = age / duration;
+      const alpha = t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8;
+      const scale = 1 + (1 - t) * 0.4;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(W / 2, H / 2 - 60);
+      ctx.scale(scale, scale);
+      ctx.font = 'bold 32px Comic Sans MS, Chalkboard SE, cursive';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.strokeText(levelFlash.text, 0, 0);
+      ctx.fillText(levelFlash.text, 0, 0);
+      ctx.restore();
+    } else {
+      levelFlash = null;
+    }
+  }
 
   // Timer bar at top
   const barW = W - 20;
