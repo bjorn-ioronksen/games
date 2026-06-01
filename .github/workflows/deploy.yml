@@ -24,8 +24,8 @@ jobs:
             --exclude 'terraform' \
             --exclude '__pycache__' \
             --exclude 'config.json' \
-            -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+            -e "ssh -i key.pem -o StrictHostKeyChecking=no -p 40285" \
             ./ ec2-user@$HOST:/opt/games/
-          ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@$HOST \
-            'sudo systemctl restart games'
+          ssh -i key.pem -o StrictHostKeyChecking=no -p 40285 ec2-user@$HOST \
+            'sudo systemctl restart games-server'
           rm key.pem
