@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monster Fight!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+      background: linear-gradient(135deg, #2d1b69, #11998e);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: white;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      background: white;
+      border: none;
+      border-radius: 50px;
+      padding: 8px 18px;
+      font-family: inherit;
+      font-size: 1em;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      text-decoration: none;
+      color: #555;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      margin-bottom: 6px;
+    }
+
+    /* ── PICK SCREEN ── */
+    #pickScreen { width: 100%; max-width: 700px; text-align: center; }
+
+    .pick-title { font-size: 1.4em; margin: 20px 0 14px; opacity: 0.9; }
+
+    .pick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .pick-card {
+      background: rgba(255,255,255,0.15);
+      border: 3px solid transparent;
+      border-radius: 20px;
+      padding: 18px 10px;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, background 0.15s;
+      text-align: center;
+    }
+    .pick-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.25); }
+    .pick-card.selected { border-color: #ffeaa7; background: rgba(255,234,167,0.25); }
+
+    .pick-emoji { font-size: 3em; display: block; margin-bottom: 8px; }
+    .pick-name  { font-size: 1.05em; font-weight: bold; }
+    .pick-desc  { font-size: 0.75em; opacity: 0.8; margin-top: 4px; }
+
+    .fight-btn {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #fd79a8, #e84393);
+      border: none;
+      border-radius: 50px;
+      padding: 16px 40px;
+      font-family: inherit;
+      font-size: 1.3em;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(232,67,147,0.5);
+      display: none;
+    }
+    .fight-btn:hover { opacity: 0.9; transform: scale(1.04); }
+
+    /* ── BATTLE SCREEN ── */
+    #battleScreen { display: none; width: 100%; max-width: 600px; }
+
+    .arena {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .fighter {
+      flex: 1;
+      text-align: center;
+    }
+
+    .fighter-emoji {
+      font-size: 5em;
+      display: block;
+      transition: transform 0.1s;
+    }
+    .fighter-emoji.shake {
+      animation: shake 0.4s ease;
+    }
+    .fighter-emoji.attack-right {
+      animation: attackRight 0.4s ease;
+    }
+    .fighter-emoji.attack-left {
+      animation: attackLeft 0.4s ease;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-10px) rotate(-5deg); }
+      75%      { transform: translateX(10px) rotate(5deg); }
+    }
+    @keyframes attackRight {
+      0%   { transform: translateX(0); }
+      40%  { transform: translateX(60px) scale(1.2); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes attackLeft {
+      0%   { transform: translateX(0); }
+      40%  { transform: translateX(-60px) scale(1.2); }
+      100% { transform: translateX(0); }
+    }
+
+    .fighter-name { font-size: 1.1em; font-weight: bold; margin-top: 8px; }
+
+    .hp-bar-wrap {
+      background: rgba(0,0,0,0.3);
+      border-radius: 20px;
+      height: 18px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .hp-bar {
+      height: 100%;
+      border-radius: 20px;
+      transition: width 0.4s ease;
+    }
+    .hp-bar.hero  { background: linear-gradient(90deg, #00b894, #55efc4); }
+    .hp-bar.enemy { background: linear-gradient(90deg, #d63031, #ff7675); }
+    .hp-label { font-size: 0.85em; opacity: 0.8; }
+
+    .vs { font-size: 2.5em; font-weight: bold; opacity: 0.5; align-self: center; }
+
+    /* battle log */
+    .log-box {
+      background: rgba(0,0,0,0.3);
+      border-radius: 15px;
+      padding: 14px 18px;
+      min-height: 60px;
+      font-size: 1em;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    /* action buttons */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .action-btn {
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      padding: 16px;
+      font-family: inherit;
+      font-size: 1.05em;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.1s;
+      text-align: center;
+    }
+    .action-btn:hover:not(:disabled) { background: rgba(255,255,255,0.28); transform: translateY(-2px); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action-btn .btn-emoji { font-size: 1.4em; display: block; }
+
+    /* end screen */
+    #endScreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #endScreen.show { display: flex; }
+
+    .end-box {
+      background: white;
+      color: #333;
+      border-radius: 30px;
+      padding: 40px;
+      text-align: center;
+      max-width: 340px;
+      animation: popIn 0.4s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.5); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .end-box h2 { font-size: 2em; margin-bottom: 10px; }
+    .end-box p  { color: #666; margin-bottom: 6px; font-size: 1.1em; }
+    .end-emoji  { font-size: 3.5em; margin-bottom: 10px; }
+
+    .end-btn {
+      margin: 10px 6px 0;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 28px;
+      font-family: inherit;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+    .end-btn.again { background: #6c5ce7; color: white; }
+    .end-btn.home  { background: #dfe6e9; color: #333; }
+  </style>
+</head>
+<body>
+
+  <a class="back-btn" href="../index.html">⬅ Back</a>
+  <h1>⚔️ Monster Fight!</h1>
+
+  <!-- PICK YOUR HERO -->
+  <div id="pickScreen">
+    <p class="pick-title">Step 1 — Pick your hero!</p>
+    <div class="pick-grid" id="heroGrid"></div>
+
+    <p class="pick-title" id="monsterTitle" style="display:none">Step 2 — Pick your monster!</p>
+    <div class="pick-grid" id="monsterGrid"></div>
+
+    <button class="fight-btn" id="fightBtn" onclick="startBattle()">⚔️ FIGHT!</button>
+  </div>
+
+  <!-- BATTLE -->
+  <div id="battleScreen">
+    <div class="arena">
+      <div class="fighter">
+        <span class="fighter-emoji" id="heroEmoji"></span>
+        <div class="fighter-name" id="heroName"></div>
+        <div class="hp-bar-wrap"><div class="hp-bar hero" id="heroHpBar" style="width:100%"></div></div>
+        <div class="hp-label" id="heroHpLabel"></div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="fighter">
+        <span class="fighter-emoji" id="enemyEmoji"></span>
+        <div class="fighter-name" id="enemyName"></div>
+        <div class="hp-bar-wrap"><div class="hp-bar enemy" id="enemyHpBar" style="width:100%"></div></div>
+        <div class="hp-label" id="enemyHpLabel"></div>
+      </div>
+    </div>
+
+    <div class="log-box" id="logBox">The battle begins! Choose your move!</div>
+
+    <div class="actions">
+      <button class="action-btn" onclick="doAction('sword')">
+        <span class="btn-emoji">⚔️</span>Sword Attack
+      </button>
+      <button class="action-btn" onclick="doAction('magic')">
+        <span class="btn-emoji">✨</span>Magic Spell
+      </button>
+      <button class="action-btn" onclick="doAction('heal')">
+        <span class="btn-emoji">💊</span>Heal Potion
+      </button>
+      <button class="action-btn" onclick="doAction('bigattack')">
+        <span class="btn-emoji">💥</span>Super Attack!
+      </button>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="endScreen">
+    <div class="end-box">
+      <div class="end-emoji" id="endEmoji"></div>
+      <h2 id="endTitle"></h2>
+      <p id="endMsg"></p>
+      <button class="end-btn again" onclick="resetToPickMonster()">Fight Again!</button>
+      <button class="end-btn home" onclick="goHome()">Pick New Hero</button>
+    </div>
+  </div>
+
+  <script>
+    const HEROES = [
+      { name: 'Princess',  emoji: '👸', hp: 80,  atk: [8,14],  magic: [12,20] },
+      { name: 'Wizard',    emoji: '🧙', hp: 70,  atk: [6,10],  magic: [18,28] },
+      { name: 'Knight',    emoji: '🧝', hp: 100, atk: [12,18], magic: [6,12]  },
+      { name: 'Ninja',     emoji: '🥷', hp: 75,  atk: [10,22], magic: [8,14]  },
+    ];
+
+    const MONSTERS = [
+      { name: 'Dragon',    emoji: '🐉', hp: 120, atk: [10,18], taunt: ['roars loudly!', 'breathes fire!', 'swipes with claws!'] },
+      { name: 'Vampire',   emoji: '🧛', hp: 90,  atk: [8,16],  taunt: ['hisses at you!', 'swoops in!', 'bares its fangs!'] },
+      { name: 'Zombie',    emoji: '🧟', hp: 110, atk: [6,12],  taunt: ['groans horribly!', 'lurches forward!', 'grabs at you!'] },
+      { name: 'Goblin',    emoji: '👺', hp: 70,  atk: [5,10],  taunt: ['cackles evilly!', 'throws a rock!', 'pokes you!'] },
+      { name: 'Witch',     emoji: '🧙‍♀️', hp: 85, atk: [9,15], taunt: ['casts a curse!', 'stirs her cauldron!', 'sends bats at you!'] },
+      { name: 'Ghost',     emoji: '👻', hp: 80,  atk: [7,13],  taunt: ['BOOO!', 'floats through you!', 'wails spookily!'] },
+    ];
+
+    let hero = null, monster = null;
+    let heroHp, monsterHp;
+    let healUsed = false, bigUsed = false;
+    let busy = false;
+
+    // ── PICK SCREEN ──
+
+    function buildPicks() {
+      buildGrid('heroGrid', HEROES, 'hero');
+    }
+
+    function buildGrid(containerId, items, type) {
+      const grid = document.getElementById(containerId);
+      grid.innerHTML = '';
+      items.forEach((item, i) => {
+        const card = document.createElement('div');
+        card.className = 'pick-card';
+        card.innerHTML = `<span class="pick-emoji">${item.emoji}</span>
+          <div class="pick-name">${item.name}</div>
+          <div class="pick-desc">${item.hp} HP</div>`;
+        card.onclick = () => selectItem(type, i, containerId);
+        grid.appendChild(card);
+      });
+    }
+
+    function selectItem(type, index, containerId) {
+      document.querySelectorAll(`#${containerId} .pick-card`).forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll(`#${containerId} .pick-card`)[index].classList.add('selected');
+
+      if (type === 'hero') {
+        hero = HEROES[index];
+        document.getElementById('monsterTitle').style.display = '';
+        buildGrid('monsterGrid', MONSTERS, 'monster');
+        monster = null;
+        document.getElementById('fightBtn').style.display = 'none';
+      } else {
+        monster = MONSTERS[index];
+        if (hero) {
+          const btn = document.getElementById('fightBtn');
+          btn.style.display = '';
+          setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+        }
+      }
+    }
+
+    // ── BATTLE ──
+
+    function startBattle() {
+      heroHp = hero.hp;
+      monsterHp = monster.hp;
+      healUsed = false;
+      bigUsed = false;
+      busy = false;
+
+      document.getElementById('pickScreen').style.display = 'none';
+      document.getElementById('battleScreen').style.display = 'block';
+
+      document.getElementById('heroEmoji').textContent  = hero.emoji;
+      document.getElementById('heroName').textContent   = hero.name;
+      document.getElementById('enemyEmoji').textContent = monster.emoji;
+      document.getElementById('enemyName').textContent  = monster.name;
+
+      updateBars();
+      setLog(`You face the ${monster.name}! ${monster.emoji} ${rand(monster.taunt)}`);
+      updateButtons();
+    }
+
+    function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    function updateBars() {
+      const hPct = Math.max(0, (heroHp / hero.hp) * 100);
+      const mPct = Math.max(0, (monsterHp / monster.hp) * 100);
+      document.getElementById('heroHpBar').style.width  = hPct + '%';
+      document.getElementById('enemyHpBar').style.width = mPct + '%';
+      document.getElementById('heroHpLabel').textContent  = `${Math.max(0,heroHp)} / ${hero.hp} HP`;
+      document.getElementById('enemyHpLabel').textContent = `${Math.max(0,monsterHp)} / ${monster.hp} HP`;
+    }
+
+    function setLog(msg) { document.getElementById('logBox').textContent = msg; }
+
+    function updateButtons() {
+      const btns = document.querySelectorAll('.action-btn');
+      btns.forEach(b => b.disabled = busy);
+      btns[2].disabled = busy || healUsed;   // heal
+      btns[3].disabled = busy || bigUsed;    // big attack
+      if (healUsed)  btns[2].style.opacity = '0.35';
+      if (bigUsed)   btns[3].style.opacity = '0.35';
+    }
+
+    function animate(id, cls) {
+      const el = document.getElementById(id);
+      el.classList.remove(cls);
+      void el.offsetWidth;
+      el.classList.add(cls);
+      setTimeout(() => el.classList.remove(cls), 500);
+    }
+
+    function doAction(type) {
+      if (busy) return;
+      busy = true;
+      updateButtons();
+
+      let dmg = 0, msg = '';
+
+      if (type === 'sword') {
+        dmg = randInt(...hero.atk);
+        msg = `⚔️ You slash for ${dmg} damage!`;
+        animate('heroEmoji', 'attack-right');
+      } else if (type === 'magic') {
+        dmg = randInt(...hero.magic);
+        msg = `✨ Your spell blasts for ${dmg} damage!`;
+        animate('heroEmoji', 'attack-right');
+      } else if (type === 'heal') {
+        const heal = randInt(15, 25);
+        heroHp = Math.min(hero.hp, heroHp + heal);
+        healUsed = true;
+        msg = `💊 You drink a potion and recover ${heal} HP!`;
+        updateBars();
+        setTimeout(() => monsterTurn(0, msg), 700);
+        return;
+      } else if (type === 'bigattack') {
+        dmg = randInt(25, 40);
+        bigUsed = true;
+        msg = `💥 SUPER ATTACK! ${dmg} massive damage!!`;
+        animate('heroEmoji', 'attack-right');
+      }
+
+      monsterHp -= dmg;
+      updateBars();
+
+      if (monsterHp <= 0) {
+        setTimeout(() => endBattle(true), 600);
+        return;
+      }
+
+      setTimeout(() => monsterTurn(dmg, msg), 700);
+    }
+
+    function monsterTurn(heroDidDmg, heroMsg) {
+      const mdmg = randInt(...monster.atk);
+      const taunt = rand(monster.taunt);
+      heroHp -= mdmg;
+      animate('enemyEmoji', 'attack-left');
+      setTimeout(() => {
+        animate('heroEmoji', 'shake');
+        updateBars();
+        const fullMsg = heroDidDmg
+          ? `${heroMsg} The ${monster.name} ${taunt} hitting you for ${mdmg}!`
+          : `${heroMsg} The ${monster.name} ${taunt} hitting you for ${mdmg}!`;
+        setLog(fullMsg);
+
+        if (heroHp <= 0) {
+          setTimeout(() => endBattle(false), 600);
+        } else {
+          busy = false;
+          updateButtons();
+        }
+      }, 300);
+    }
+
+    function endBattle(won) {
+      const screen = document.getElementById('endScreen');
+      if (won) {
+        document.getElementById('endEmoji').textContent  = '🏆';
+        document.getElementById('endTitle').textContent  = 'You won!';
+        document.getElementById('endMsg').textContent    = `The ${monster.name} has been defeated! You're amazing!`;
+      } else {
+        document.getElementById('endEmoji').textContent  = '💀';
+        document.getElementById('endTitle').textContent  = 'You lost...';
+        document.getElementById('endMsg').textContent    = `The ${monster.name} was too strong this time. Try again!`;
+      }
+      screen.classList.add('show');
+    }
+
+    function resetToPickMonster() {
+      document.getElementById('endScreen').classList.remove('show');
+      startBattle();
+    }
+
+    function goHome() {
+      document.getElementById('endScreen').classList.remove('show');
+      document.getElementById('battleScreen').style.display = 'none';
+      document.getElementById('pickScreen').style.display = 'block';
+      hero = null; monster = null;
+      document.getElementById('fightBtn').style.display = 'none';
+      document.getElementById('monsterTitle').style.display = 'none';
+      document.getElementById('monsterGrid').innerHTML = '';
+      buildPicks();
+    }
+
+    buildPicks();
+  </script>
+</body>
+</html>
