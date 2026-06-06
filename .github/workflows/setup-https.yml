@@ -1,0 +1,25 @@
+name: Setup HTTPS (run once)
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain to get cert for'
+        required: true
+        default: '34.242.181.49.nip.io'
+
+jobs:
+  setup-https:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run setup-https.sh on server
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          DOMAIN: ${{ github.event.inputs.domain }}
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 600 key.pem
+          ssh -i key.pem -o StrictHostKeyChecking=no -p 40285 ec2-user@$HOST \
+            "sudo bash /opt/games/setup-https.sh $DOMAIN"
+          rm key.pem
