@@ -16,6 +16,9 @@ with open(CONFIG_PATH) as f:
 
 SITE_PASSWORD = config.get('site_password', '')
 OPENAI_KEY = config.get('openai_key', '')
+CERT_FILE = config.get('cert_file', '')
+KEY_FILE = config.get('key_file', '')
+HTTPS_MODE = bool(CERT_FILE and KEY_FILE)
 
 # session_token -> expires_at
 sessions = {}
@@ -83,7 +86,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 token = secrets.token_hex(32)
                 sessions[token] = time.time() + 86400 * 30  # 30 days
                 self.send_response(302)
-                self.send_header('Set-Cookie', f'session={token}; Path=/; HttpOnly; SameSite=Lax')
+                secure_flag = '; Secure' if HTTPS_MODE else ''
+                self.send_header('Set-Cookie', f'session={token}; Path=/; HttpOnly; SameSite=Lax{secure_flag}')
                 self.send_header('Location', '/')
                 self.end_headers()
             else:
@@ -217,13 +221,47 @@ class ThreadedServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     pass
 
 
+class RedirectToHTTPSHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        host = self.headers.get('Host', '').split(':')[0]
+        self.send_response(301)
+        self.send_header('Location', f'https://{host}{self.path}')
+        self.end_headers()
+
+    def do_POST(self):
+        host = self.headers.get('Host', '').split(':')[0]
+        self.send_response(301)
+        self.send_header('Location', f'https://{host}{self.path}')
+        self.end_headers()
+
+    def log_message(self, *args):
+        pass
+
+
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    port = int(os.environ.get('PORT', 80))
-    server = ThreadedServer(('', port), Handler)
     has_openai = '✅ OpenAI DALL-E active' if OPENAI_KEY else '⚠️  No OpenAI key — using fallback images'
-    has_auth = f'🔒 Password protected' if SITE_PASSWORD else '🔓 No password set'
-    print(f'Server running on http://0.0.0.0:{port}')
-    print(has_auth)
-    print(has_openai)
-    server.serve_forever()
+    has_auth = '🔒 Password protected' if SITE_PASSWORD else '🔓 No password set'
+
+    if HTTPS_MODE and os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(CERT_FILE, KEY_FILE)
+
+        https_server = ThreadedServer(('', 443), Handler)
+        https_server.socket = ctx.wrap_socket(https_server.socket, server_side=True)
+
+        http_server = ThreadedServer(('', 80), RedirectToHTTPSHandler)
+        t = threading.Thread(target=http_server.serve_forever, daemon=True)
+        t.start()
+
+        print('Server running on https://0.0.0.0:443 (HTTP :80 redirects to HTTPS)')
+        print(has_auth)
+        print(has_openai)
+        https_server.serve_forever()
+    else:
+        port = int(os.environ.get('PORT', 80))
+        server = ThreadedServer(('', port), Handler)
+        print(f'Server running on http://0.0.0.0:{port}')
+        print(has_auth)
+        print(has_openai)
+        server.serve_forever()
